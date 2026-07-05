@@ -47,7 +47,7 @@ export function StatusCell({ invoice }: { invoice: any }) {
       disabled={saving}
       onClick={(e) => e.stopPropagation()}
       onChange={(e) => save(e.target.value)}
-      className="bg-background border border-border rounded px-2 py-1 text-sm"
+      className="w-full bg-background border border-border rounded px-2 py-1 text-sm"
     >
       <option value="">—</option>
       {STATUS_OPTIONS.map((o) => (

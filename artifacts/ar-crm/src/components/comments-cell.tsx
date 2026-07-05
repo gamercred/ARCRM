@@ -32,7 +32,7 @@ export function CommentsCell({ invoice }: { invoice: any }) {
       onChange={(e) => setValue(e.target.value)}
       onBlur={save}
       placeholder="Add comment..."
-      className="bg-background border border-border rounded px-2 py-1 text-sm w-[220px]"
+      className="w-full bg-background border border-border rounded px-2 py-1 text-sm"
     />
   );
 }

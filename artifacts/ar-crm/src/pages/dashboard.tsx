@@ -67,7 +67,7 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="p-6 space-y-6 max-w-[1400px] mx-auto">
+    <div className="p-6 space-y-6 w-full">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">AR Dashboard</h1>
         <div className="flex items-center gap-3">
@@ -220,23 +220,23 @@ export default function Dashboard() {
 
       {/* Invoice Table */}
       <div className="w-full">
-        <Table>
+        <Table className="table-fixed w-full text-sm">
           <TableHeader>
             <TableRow className="hover:bg-transparent border-b-border bg-muted/30">
-              <TableHead className="font-mono uppercase tracking-wider text-xs">Customer ID</TableHead>
-              <TableHead className="font-mono uppercase tracking-wider text-xs">Customer Name</TableHead>
-              <TableHead className="font-mono uppercase tracking-wider text-xs">Invoice #</TableHead>
-              <TableHead className="font-mono uppercase tracking-wider text-xs">Invoice Date</TableHead>
-              <TableHead className="font-mono uppercase tracking-wider text-xs">Due Date</TableHead>
-              <TableHead className="font-mono uppercase tracking-wider text-xs">Txn Ccy</TableHead>
-              <TableHead className="font-mono uppercase tracking-wider text-xs text-right">Txn Amount</TableHead>
-              <TableHead className="font-mono uppercase tracking-wider text-xs text-center">Days Aged</TableHead>
-              <TableHead className="font-mono uppercase tracking-wider text-xs text-right">Total Open (USD)</TableHead>
-              <TableHead className="font-mono uppercase tracking-wider text-xs">Collector</TableHead>
-              <TableHead className="font-mono uppercase tracking-wider text-xs">Category</TableHead>
-              <TableHead className="font-mono uppercase tracking-wider text-xs">Invoice Stage</TableHead>
-              <TableHead className="font-mono uppercase tracking-wider text-xs">Status</TableHead>
-              <TableHead className="font-mono uppercase tracking-wider text-xs">Comments</TableHead>
+              <TableHead className="text-sm font-semibold p-2">Customer ID</TableHead>
+              <TableHead className="text-sm font-semibold p-2">Customer Name</TableHead>
+              <TableHead className="text-sm font-semibold p-2">Invoice #</TableHead>
+              <TableHead className="text-sm font-semibold p-2">Invoice Date</TableHead>
+              <TableHead className="text-sm font-semibold p-2">Due Date</TableHead>
+              <TableHead className="text-sm font-semibold p-2">Txn Ccy</TableHead>
+              <TableHead className="text-sm font-semibold p-2">Txn Amount</TableHead>
+              <TableHead className="text-sm font-semibold p-2">Days Aged</TableHead>
+              <TableHead className="text-sm font-semibold p-2">Total Open (USD)</TableHead>
+              <TableHead className="text-sm font-semibold p-2">Collector</TableHead>
+              <TableHead className="text-sm font-semibold p-2">Category</TableHead>
+              <TableHead className="text-sm font-semibold p-2">Invoice Stage</TableHead>
+              <TableHead className="text-sm font-semibold p-2">Status</TableHead>
+              <TableHead className="text-sm font-semibold p-2">Comments</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -244,7 +244,7 @@ export default function Dashboard() {
               Array.from({ length: 8 }).map((_, i) => (
                 <TableRow key={i}>
                   {Array.from({ length: 14 }).map((_, j) => (
-                    <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
+                    <TableCell key={j} className="p-2"><Skeleton className="h-4 w-full" /></TableCell>
                   ))}
                 </TableRow>
               ))
@@ -254,21 +254,21 @@ export default function Dashboard() {
               </TableRow>
             ) : (
               invoicesData?.invoices.map((invoice) => (
-                <TableRow key={invoice.id} className="hover:bg-muted/40 transition-colors">
-                  <TableCell className="font-mono text-xs">{invoice.customerId}</TableCell>
-                  <TableCell className="font-medium">{invoice.customerName}</TableCell>
-                  <TableCell className="font-mono text-sm">{invoice.invoiceNumber}</TableCell>
-                  <TableCell className="text-sm">{formatDate(invoice.issueDate)}</TableCell>
-                  <TableCell className="text-sm">{formatDate(invoice.dueDate)}</TableCell>
-                  <TableCell className="text-sm">{invoice.txnCurrency ?? "—"}</TableCell>
-                  <TableCell className="text-right font-mono text-sm">{invoice.txnAmount != null ? invoice.txnAmount.toLocaleString() : "—"}</TableCell>
-                  <TableCell className="text-center font-mono text-sm">{invoice.daysAged ?? "—"}</TableCell>
-                  <TableCell className="text-right font-mono text-sm">{formatCurrency(invoice.amount, "USD")}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{invoice.analystName ?? "—"}</TableCell>
-                  <TableCell className="text-sm">{invoice.category ?? "—"}</TableCell>
-                  <TableCell className="text-sm min-w-[200px]">{invoice.invoiceStage || "—"}</TableCell>
-                  <TableCell>{<StatusCell invoice={invoice} />}</TableCell>
-                  <TableCell>{<CommentsCell invoice={invoice} />}</TableCell>
+                <TableRow key={invoice.id} className="hover:bg-muted/40 transition-colors align-top">
+                  <TableCell className="text-sm p-2 break-words">{invoice.customerId}</TableCell>
+                  <TableCell className="text-sm p-2 break-words">{invoice.customerName}</TableCell>
+                  <TableCell className="text-sm p-2 break-words">{invoice.invoiceNumber}</TableCell>
+                  <TableCell className="text-sm p-2 break-words">{formatDate(invoice.issueDate)}</TableCell>
+                  <TableCell className="text-sm p-2 break-words">{formatDate(invoice.dueDate)}</TableCell>
+                  <TableCell className="text-sm p-2 break-words">{invoice.txnCurrency ?? "—"}</TableCell>
+                  <TableCell className="text-sm p-2 break-words">{invoice.txnAmount != null ? invoice.txnAmount.toLocaleString() : "—"}</TableCell>
+                  <TableCell className="text-sm p-2 break-words">{invoice.daysAged ?? "—"}</TableCell>
+                  <TableCell className="text-sm p-2 break-words">{formatCurrency(invoice.amount, "USD")}</TableCell>
+                  <TableCell className="text-sm p-2 break-words">{invoice.analystName ?? "—"}</TableCell>
+                  <TableCell className="text-sm p-2 break-words">{invoice.category ?? "—"}</TableCell>
+                  <TableCell className="text-sm p-2 break-words">{invoice.invoiceStage || "—"}</TableCell>
+                  <TableCell className="text-sm p-2 break-words">{<StatusCell invoice={invoice} />}</TableCell>
+                  <TableCell className="text-sm p-2 break-words">{<CommentsCell invoice={invoice} />}</TableCell>
                 </TableRow>
               ))
             )}
