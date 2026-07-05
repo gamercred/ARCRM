@@ -45,6 +45,7 @@ export default function Dashboard() {
   const [status, setStatus] = useState<ListInvoicesStatus | "all">("all");
   const [analystId, setAnalystId] = useState<string>("all");
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
+  const [colFilters, setColFilters] = useState<Record<string, string>>({});
 
   const { data: invoicesData, isLoading: isLoadingInvoices } = useListInvoices({
     search: search || undefined,
@@ -54,6 +55,30 @@ export default function Dashboard() {
   });
 
   const { data: analysts } = useListAnalysts();
+
+  const COLS: { key: string; label: string; get: (i: any) => any }[] = [
+    { key: "customerId", label: "Customer ID", get: (i) => i.customerId },
+    { key: "customerName", label: "Customer Name", get: (i) => i.customerName },
+    { key: "invoiceNumber", label: "Invoice #", get: (i) => i.invoiceNumber },
+    { key: "issueDate", label: "Invoice Date", get: (i) => formatDate(i.issueDate) },
+    { key: "dueDate", label: "Due Date", get: (i) => formatDate(i.dueDate) },
+    { key: "txnCurrency", label: "Txn Ccy", get: (i) => i.txnCurrency },
+    { key: "txnAmount", label: "Txn Amount", get: (i) => i.txnAmount },
+    { key: "daysAged", label: "Days Aged", get: (i) => i.daysAged },
+    { key: "amount", label: "Total Open (USD)", get: (i) => i.amount },
+    { key: "analystName", label: "Collector", get: (i) => i.analystName },
+    { key: "category", label: "Category", get: (i) => i.category },
+    { key: "invoiceStage", label: "Invoice Stage", get: (i) => i.invoiceStage },
+    { key: "manualStatus", label: "Status", get: (i) => i.manualStatus },
+    { key: "comments", label: "Comments", get: (i) => i.comments },
+  ];
+  const rawInvoices = invoicesData?.invoices ?? [];
+  const filteredInvoices = rawInvoices.filter((inv: any) =>
+    COLS.every((c) => {
+      const f = (colFilters[c.key] || "").trim().toLowerCase();
+      return !f || String(c.get(inv) ?? "").toLowerCase().includes(f);
+    }),
+  );
 
   const totalAr = summary?.totalOutstanding ?? 0;
 
@@ -223,20 +248,21 @@ export default function Dashboard() {
         <Table className="table-fixed w-full text-sm">
           <TableHeader>
             <TableRow className="hover:bg-transparent border-b-border bg-muted/30">
-              <TableHead className="text-sm font-semibold p-2">Customer ID</TableHead>
-              <TableHead className="text-sm font-semibold p-2">Customer Name</TableHead>
-              <TableHead className="text-sm font-semibold p-2">Invoice #</TableHead>
-              <TableHead className="text-sm font-semibold p-2">Invoice Date</TableHead>
-              <TableHead className="text-sm font-semibold p-2">Due Date</TableHead>
-              <TableHead className="text-sm font-semibold p-2">Txn Ccy</TableHead>
-              <TableHead className="text-sm font-semibold p-2">Txn Amount</TableHead>
-              <TableHead className="text-sm font-semibold p-2">Days Aged</TableHead>
-              <TableHead className="text-sm font-semibold p-2">Total Open (USD)</TableHead>
-              <TableHead className="text-sm font-semibold p-2">Collector</TableHead>
-              <TableHead className="text-sm font-semibold p-2">Category</TableHead>
-              <TableHead className="text-sm font-semibold p-2">Invoice Stage</TableHead>
-              <TableHead className="text-sm font-semibold p-2">Status</TableHead>
-              <TableHead className="text-sm font-semibold p-2">Comments</TableHead>
+              {COLS.map((c) => (
+                <TableHead key={c.key} className="text-sm font-semibold p-2">{c.label}</TableHead>
+              ))}
+            </TableRow>
+            <TableRow className="hover:bg-transparent">
+              {COLS.map((c) => (
+                <TableHead key={c.key} className="p-1">
+                  <input
+                    value={colFilters[c.key] || ""}
+                    onChange={(e) => setColFilters((prev) => ({ ...prev, [c.key]: e.target.value }))}
+                    placeholder="Filter"
+                    className="w-full bg-background border border-border rounded px-1 py-0.5 text-xs font-normal"
+                  />
+                </TableHead>
+              ))}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -248,12 +274,12 @@ export default function Dashboard() {
                   ))}
                 </TableRow>
               ))
-            ) : invoicesData?.invoices.length === 0 ? (
+            ) : filteredInvoices.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={14} className="text-center py-10 text-muted-foreground">No invoices found.</TableCell>
               </TableRow>
             ) : (
-              invoicesData?.invoices.map((invoice) => (
+              filteredInvoices.map((invoice: any) => (
                 <TableRow key={invoice.id} className="hover:bg-muted/40 transition-colors align-top">
                   <TableCell className="text-sm p-2 break-words">{invoice.customerId}</TableCell>
                   <TableCell className="text-sm p-2 break-words">{invoice.customerName}</TableCell>
@@ -278,7 +304,7 @@ export default function Dashboard() {
 
       {invoicesData && (
         <div className="text-xs text-muted-foreground text-right">
-          Showing {invoicesData.invoices.length} of {invoicesData.total} invoices
+          Showing {filteredInvoices.length} of {invoicesData.total} invoices
         </div>
       )}
 
