@@ -42,7 +42,7 @@ export function StatusCell({ invoice }: { invoice: any }) {
       onChange={(e) => save(e.target.value)}
       className="bg-background border border-border rounded px-2 py-1 text-sm"
     >
-      <option value="">\u2014</option>
+      <option value="">—</option>
       {STATUS_OPTIONS.map((o) => (
         <option key={o} value={o}>
           {o}

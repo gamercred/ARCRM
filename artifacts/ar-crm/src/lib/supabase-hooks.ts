@@ -62,6 +62,7 @@ function formatInvoice(row: any, analystMap: Map<number, string>, today: Date) {
     status,
     overdueDays,
     invoiceStage: row.invoice_stage ?? computeStage(Number(row.days_aged ?? 0)),
+    manualStatus: row.status ?? null,
     analystId: row.analyst_id ?? null,
     analystName: row.analyst_id ? analystMap.get(row.analyst_id) ?? null : null,
     netsuiteId: row.netsuite_id ?? null,
