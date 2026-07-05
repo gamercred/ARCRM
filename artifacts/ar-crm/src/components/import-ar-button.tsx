@@ -39,6 +39,14 @@ export function ImportArButton() {
           String(r["Txn currency"] || "").toLowerCase() !== "total",
       );
 
+      // Preserve analyst-entered Status + Comments (matched by invoice number)
+      const existing = await supabase.from("invoices").select("invoice_number, status, comments");
+      if (existing.error) throw new Error("Reading existing: " + existing.error.message);
+      const preserve = new Map<string, { status: any; comments: any }>();
+      for (const e of existing.data || [])
+        preserve.set(String(e.invoice_number), { status: e.status, comments: e.comments });
+
+      // Replace-all
       let del = await supabase.from("invoices").delete().neq("id", "__none__");
       if (del.error) throw new Error("Clearing invoices: " + del.error.message);
       del = await supabase.from("analysts").delete().neq("id", 0);
@@ -60,14 +68,13 @@ export function ImportArButton() {
       }
 
       const invoiceRows = rows.map((r) => {
-        const category = String(r["Category"] || "").trim();
-        const subCategory = String(r["Sub Category"] || "").trim();
-        const comments = String(r["Comments"] || "").trim();
+        const invNo = String(r["Invoice number"]);
+        const prev = preserve.get(invNo);
+        const sheetComment = String(r["Comments"] || "").trim();
         const collector = String(r["Collector"] || "").trim();
-        const isDisputed = category.toLowerCase() === "dispute";
         return {
           id: crypto.randomUUID(),
-          invoice_number: String(r["Invoice number"]),
+          invoice_number: invNo,
           customer_id: String(r["Customer ID"] || ""),
           customer_name: String(r["Customer name"] || ""),
           amount: num(r["Total Open (USD)"]),
@@ -76,14 +83,13 @@ export function ImportArButton() {
           issue_date: fmt(r["Invoice date"]),
           due_date: fmt(r["Due date"]),
           analyst_id: collector ? nameToId.get(collector) ?? null : null,
-          is_disputed: isDisputed,
-          dispute_reason: isDisputed ? subCategory || comments || null : null,
           txn_currency: String(r["Txn currency"] || "").trim() || null,
           txn_amount: num(r["Txn amount"]),
           days_aged: intOrNull(r["Days aged"]),
-          category: category || null,
-          sub_category: subCategory || null,
-          comments: comments || null,
+          category: String(r["Category"] || "").trim() || null,
+          comments: prev ? prev.comments : sheetComment || null,
+          status: prev ? prev.status : null,
+          invoice_stage: String(r["Invoice Stage"] || "").trim() || null,
         };
       });
 
@@ -91,7 +97,7 @@ export function ImportArButton() {
       if (insInv.error) throw new Error("Inserting invoices: " + insInv.error.message);
 
       alert(
-        `Imported ${invoiceRows.length} invoices and ${collectors.length} collectors into Supabase. Reloading...`,
+        `Imported ${invoiceRows.length} invoices and ${collectors.length} collectors. Analyst Status/Comments preserved. Reloading...`,
       );
       window.location.reload();
     } catch (err: any) {
