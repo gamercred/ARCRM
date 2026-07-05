@@ -1,0 +1,648 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: AR CRM API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+  - name: invoices
+  - name: analysts
+  - name: comments
+  - name: emails
+  - name: dashboard
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /invoices:
+    get:
+      operationId: listInvoices
+      tags: [invoices]
+      summary: List all invoices with optional filters
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [all, current, overdue_1_30, overdue_31_60, overdue_61_90, overdue_90_plus, not_due]
+        - name: analystId
+          in: query
+          schema:
+            type: ["integer", "null"]
+        - name: customerId
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: search
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: disputed
+          in: query
+          schema:
+            type: ["boolean", "null"]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: List of invoices
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvoiceList"
+
+  /invoices/{id}:
+    get:
+      operationId: getInvoice
+      tags: [invoices]
+      summary: Get a single invoice
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Invoice detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateInvoice
+      tags: [invoices]
+      summary: Update invoice fields
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvoiceUpdate"
+      responses:
+        "200":
+          description: Updated invoice
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+
+  /invoices/{id}/comments:
+    get:
+      operationId: listInvoiceComments
+      tags: [comments]
+      summary: Get comments for an invoice
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of comments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Comment"
+    post:
+      operationId: createInvoiceComment
+      tags: [comments]
+      summary: Add a comment to an invoice
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CommentInput"
+      responses:
+        "201":
+          description: Created comment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Comment"
+
+  /analysts:
+    get:
+      operationId: listAnalysts
+      tags: [analysts]
+      summary: List all AR analysts
+      responses:
+        "200":
+          description: List of analysts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Analyst"
+
+  /analysts/{id}:
+    get:
+      operationId: getAnalyst
+      tags: [analysts]
+      summary: Get analyst by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Analyst detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Analyst"
+
+  /analysts/{id}/summary:
+    get:
+      operationId: getAnalystSummary
+      tags: [analysts]
+      summary: Get analyst portfolio summary with aging buckets
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Analyst summary with aging breakdown
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalystSummary"
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get global AR dashboard summary stats
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /dashboard/aging:
+    get:
+      operationId: getDashboardAging
+      tags: [dashboard]
+      summary: Get aging breakdown for all invoices
+      responses:
+        "200":
+          description: Aging breakdown
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgingBreakdown"
+
+  /emails:
+    get:
+      operationId: listEmailThreads
+      tags: [emails]
+      summary: List email threads in team mailbox
+      parameters:
+        - name: analystId
+          in: query
+          schema:
+            type: ["integer", "null"]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [all, open, closed, awaiting_reply]
+        - name: invoiceId
+          in: query
+          schema:
+            type: ["string", "null"]
+      responses:
+        "200":
+          description: List of email threads
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EmailThread"
+    post:
+      operationId: createEmailThread
+      tags: [emails]
+      summary: Send a new collections follow-up email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmailThreadInput"
+      responses:
+        "201":
+          description: Created email thread
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailThread"
+
+  /emails/{id}:
+    get:
+      operationId: getEmailThread
+      tags: [emails]
+      summary: Get email thread with all messages
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Email thread detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailThread"
+
+  /emails/{id}/reply:
+    post:
+      operationId: replyEmailThread
+      tags: [emails]
+      summary: Add an outbound reply to an email thread
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmailReplyInput"
+      responses:
+        "201":
+          description: Reply added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailMessage"
+
+  /emails/{id}/close:
+    post:
+      operationId: closeEmailThread
+      tags: [emails]
+      summary: Mark a thread as closed/resolved
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Thread closed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailThread"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required: [status]
+
+    Invoice:
+      type: object
+      required: [id, invoiceNumber, customerId, customerName, amount, currency, issueDate, dueDate, status, overdueDays, analystId, isDisputed]
+      properties:
+        id:
+          type: string
+        invoiceNumber:
+          type: string
+        customerId:
+          type: string
+        customerName:
+          type: string
+        customerEmail:
+          type: ["string", "null"]
+        amount:
+          type: number
+        paidAmount:
+          type: number
+        currency:
+          type: string
+        issueDate:
+          type: string
+        dueDate:
+          type: string
+        status:
+          type: string
+          enum: [not_due, current, overdue_1_30, overdue_31_60, overdue_61_90, overdue_90_plus, paid]
+        overdueDays:
+          type: integer
+        analystId:
+          type: ["integer", "null"]
+        analystName:
+          type: ["string", "null"]
+        netsuiteId:
+          type: ["string", "null"]
+        salesforceId:
+          type: ["string", "null"]
+        lastContactDate:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        ptpDate:
+          type: ["string", "null"]
+        ptpAmount:
+          type: ["number", "null"]
+        isDisputed:
+          type: boolean
+        disputeReason:
+          type: ["string", "null"]
+
+    InvoiceUpdate:
+      type: object
+      properties:
+        analystId:
+          type: ["integer", "null"]
+        notes:
+          type: ["string", "null"]
+        lastContactDate:
+          type: ["string", "null"]
+        ptpDate:
+          type: ["string", "null"]
+        ptpAmount:
+          type: ["number", "null"]
+        isDisputed:
+          type: ["boolean", "null"]
+        disputeReason:
+          type: ["string", "null"]
+
+    InvoiceList:
+      type: object
+      required: [invoices, total, page, pageSize]
+      properties:
+        invoices:
+          type: array
+          items:
+            $ref: "#/components/schemas/Invoice"
+        total:
+          type: integer
+        page:
+          type: integer
+        pageSize:
+          type: integer
+
+    Comment:
+      type: object
+      required: [id, invoiceId, authorId, authorName, body, createdAt]
+      properties:
+        id:
+          type: integer
+        invoiceId:
+          type: string
+        authorId:
+          type: integer
+        authorName:
+          type: string
+        body:
+          type: string
+        createdAt:
+          type: string
+
+    CommentInput:
+      type: object
+      required: [body, authorId]
+      properties:
+        body:
+          type: string
+          minLength: 1
+        authorId:
+          type: integer
+
+    Analyst:
+      type: object
+      required: [id, name, email, portfolioCount, totalOutstanding]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        portfolioCount:
+          type: integer
+        totalOutstanding:
+          type: number
+
+    AnalystSummary:
+      type: object
+      required: [analystId, analystName, aging, totalInvoices, totalOutstanding]
+      properties:
+        analystId:
+          type: integer
+        analystName:
+          type: string
+        totalInvoices:
+          type: integer
+        totalOutstanding:
+          type: number
+        aging:
+          $ref: "#/components/schemas/AgingBreakdown"
+
+    DashboardSummary:
+      type: object
+      required: [totalOutstanding, totalInvoices, overdueCount, overdueAmount, currentCount, notDueCount, collectedThisMonth, dso, disputedCount, disputedAmount, ptpCount, ptpAmount, topCustomers]
+      properties:
+        totalOutstanding:
+          type: number
+        totalInvoices:
+          type: integer
+        overdueCount:
+          type: integer
+        overdueAmount:
+          type: number
+        currentCount:
+          type: integer
+        notDueCount:
+          type: integer
+        collectedThisMonth:
+          type: number
+        dso:
+          type: number
+        disputedCount:
+          type: integer
+        disputedAmount:
+          type: number
+        ptpCount:
+          type: integer
+        ptpAmount:
+          type: number
+        topCustomers:
+          type: array
+          items:
+            $ref: "#/components/schemas/CustomerSummary"
+
+    CustomerSummary:
+      type: object
+      required: [customerId, customerName, outstanding, invoiceCount]
+      properties:
+        customerId:
+          type: string
+        customerName:
+          type: string
+        outstanding:
+          type: number
+        invoiceCount:
+          type: integer
+
+    AgingBreakdown:
+      type: object
+      required: [notDue, current, overdue1to30, overdue31to60, overdue61to90, overdue90plus]
+      properties:
+        notDue:
+          $ref: "#/components/schemas/AgingBucket"
+        current:
+          $ref: "#/components/schemas/AgingBucket"
+        overdue1to30:
+          $ref: "#/components/schemas/AgingBucket"
+        overdue31to60:
+          $ref: "#/components/schemas/AgingBucket"
+        overdue61to90:
+          $ref: "#/components/schemas/AgingBucket"
+        overdue90plus:
+          $ref: "#/components/schemas/AgingBucket"
+
+    AgingBucket:
+      type: object
+      required: [count, amount]
+      properties:
+        count:
+          type: integer
+        amount:
+          type: number
+
+    EmailThread:
+      type: object
+      required: [id, subject, invoiceId, invoiceNumber, customerId, customerName, analystId, analystName, status, createdAt, updatedAt, messages]
+      properties:
+        id:
+          type: integer
+        subject:
+          type: string
+        invoiceId:
+          type: string
+        invoiceNumber:
+          type: string
+        customerId:
+          type: string
+        customerName:
+          type: string
+        customerEmail:
+          type: string
+        analystId:
+          type: integer
+        analystName:
+          type: string
+        status:
+          type: string
+          enum: [open, closed, awaiting_reply]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/EmailMessage"
+
+    EmailMessage:
+      type: object
+      required: [id, threadId, direction, from, to, body, sentAt]
+      properties:
+        id:
+          type: integer
+        threadId:
+          type: integer
+        direction:
+          type: string
+          enum: [outbound, inbound]
+        from:
+          type: string
+        to:
+          type: string
+        body:
+          type: string
+        sentAt:
+          type: string
+
+    EmailThreadInput:
+      type: object
+      required: [invoiceId, analystId, to, body]
+      properties:
+        invoiceId:
+          type: string
+        analystId:
+          type: integer
+        to:
+          type: string
+        body:
+          type: string
+
+    EmailReplyInput:
+      type: object
+      required: [body, direction]
+      properties:
+        body:
+          type: string
+          minLength: 1
+        direction:
+          type: string
+          enum: [outbound, inbound]
