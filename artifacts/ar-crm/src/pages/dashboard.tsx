@@ -47,6 +47,7 @@ export default function Dashboard() {
     search: search || undefined,
     status: status !== "all" ? status as ListInvoicesStatus : undefined,
     analystId: analystId !== "all" ? Number(analystId) : undefined,
+    pageSize: 100000,
   });
 
   const { data: analysts } = useListAnalysts();
