@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { logAudit } from "@/lib/audit";
 
@@ -15,6 +16,7 @@ export const STATUS_OPTIONS = [
 ];
 
 export function StatusCell({ invoice }: { invoice: any }) {
+  const qc = useQueryClient();
   const [value, setValue] = useState<string>(invoice.manualStatus ?? "");
   const [saving, setSaving] = useState(false);
 
@@ -26,7 +28,12 @@ export function StatusCell({ invoice }: { invoice: any }) {
       .from("invoices")
       .update({ status: newVal || null })
       .eq("id", invoice.id);
-    if (!error) await logAudit(invoice, "status", prev, newVal);
+    if (!error) {
+      await logAudit(invoice, "status", prev, newVal);
+      qc.invalidateQueries({ queryKey: ["dashboard-summary"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-aging"] });
+      qc.invalidateQueries({ queryKey: ["invoices"] });
+    }
     setSaving(false);
     if (error) {
       alert("Could not save status: " + error.message);

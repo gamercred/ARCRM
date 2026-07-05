@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { logAudit } from "@/lib/audit";
 
 export function CommentsCell({ invoice }: { invoice: any }) {
+  const qc = useQueryClient();
   const original = invoice.comments ?? "";
   const [value, setValue] = useState<string>(original);
   const [saving, setSaving] = useState(false);
@@ -14,7 +16,10 @@ export function CommentsCell({ invoice }: { invoice: any }) {
       .from("invoices")
       .update({ comments: value || null })
       .eq("id", invoice.id);
-    if (!error) await logAudit(invoice, "comments", original, value);
+    if (!error) {
+      await logAudit(invoice, "comments", original, value);
+      qc.invalidateQueries({ queryKey: ["invoices"] });
+    }
     setSaving(false);
     if (error) alert("Could not save comment: " + error.message);
   }
