@@ -47,6 +47,7 @@ export default function Dashboard() {
   const [analystId, setAnalystId] = useState<string>("all");
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
   const [colFilters, setColFilters] = useState<Record<string, string>>({});
+  const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" } | null>(null);
 
   const { data: invoicesData, isLoading: isLoadingInvoices } = useListInvoices({
     search: search || undefined,
@@ -86,6 +87,17 @@ export default function Dashboard() {
       return !f || String(c.get(inv) ?? "") === f;
     }),
   );
+  const sortedInvoices = [...filteredInvoices];
+  if (sort && (sort.key === "daysAged" || sort.key === "amount")) {
+    const col = COLS.find((c) => c.key === sort.key);
+    if (col) {
+      sortedInvoices.sort((a, b) => {
+        const av = Number(col.get(a) ?? 0);
+        const bv = Number(col.get(b) ?? 0);
+        return sort.dir === "asc" ? av - bv : bv - av;
+      });
+    }
+  }
 
   const totalAr = summary?.totalOutstanding ?? 0;
 
@@ -257,12 +269,29 @@ export default function Dashboard() {
             <TableRow className="hover:bg-transparent border-b-border bg-muted/30">
               {COLS.map((c) => (
                 <TableHead key={c.key} className="text-sm font-semibold p-2">
-                  <ColumnFilter
-                    label={c.label}
-                    values={distinctVals[c.key] || []}
-                    value={colFilters[c.key] || ""}
-                    onChange={(v) => setColFilters((prev) => ({ ...prev, [c.key]: v }))}
-                  />
+                  <div className="flex items-center gap-1">
+                    <ColumnFilter
+                      label={c.label}
+                      values={distinctVals[c.key] || []}
+                      value={colFilters[c.key] || ""}
+                      onChange={(v) => setColFilters((prev) => ({ ...prev, [c.key]: v }))}
+                    />
+                    {(c.key === "daysAged" || c.key === "amount") && (
+                      <button
+                        onClick={() =>
+                          setSort((prev) =>
+                            prev && prev.key === c.key
+                              ? { key: c.key, dir: prev.dir === "asc" ? "desc" : "asc" }
+                              : { key: c.key, dir: "asc" },
+                          )
+                        }
+                        className="p-0.5 rounded hover:bg-muted text-muted-foreground"
+                        title="Sort"
+                      >
+                        {sort && sort.key === c.key ? (sort.dir === "asc" ? "▲" : "▼") : "↕"}
+                      </button>
+                    )}
+                  </div>
                 </TableHead>
               ))}
             </TableRow>
@@ -281,7 +310,7 @@ export default function Dashboard() {
                 <TableCell colSpan={14} className="text-center py-10 text-muted-foreground">No invoices found.</TableCell>
               </TableRow>
             ) : (
-              filteredInvoices.map((invoice: any) => (
+              sortedInvoices.map((invoice: any) => (
                 <TableRow key={invoice.id} className="hover:bg-muted/40 transition-colors align-top">
                   <TableCell className="text-sm p-2 break-words">{invoice.customerId}</TableCell>
                   <TableCell className="text-sm p-2 break-words">{invoice.customerName}</TableCell>
