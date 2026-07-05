@@ -80,7 +80,7 @@ export default function Dashboard() {
       </div>
 
       {/* KPI Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <KpiCard
           label="Total Outstanding"
           value={isLoadingSummary ? <Skeleton className="h-7 w-28" /> : formatCurrency(summary?.totalOutstanding ?? 0)}
@@ -101,7 +101,7 @@ export default function Dashboard() {
           color={summary && summary.dso > 45 ? "text-orange-400" : "text-emerald-400"}
           icon={Clock}
         />
-        <div className="grid grid-cols-2 gap-2 col-span-2 lg:col-span-1">
+        <div className="grid grid-cols-3 gap-2 col-span-2 lg:col-span-2">
           <Card className="bg-card">
             <CardContent className="p-3">
               <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
@@ -122,6 +122,17 @@ export default function Dashboard() {
                 {isLoadingSummary ? <Skeleton className="h-5 w-12" /> : summary?.ptpCount ?? 0}
               </div>
               <div className="text-[10px] text-muted-foreground">{isLoadingSummary ? "—" : formatCurrency(summary?.ptpAmount ?? 0)}</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-card">
+            <CardContent className="p-3">
+              <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                <FileCheck className="w-3 h-3 text-blue-400" /> In-Transit
+              </div>
+              <div className="text-lg font-bold font-mono text-blue-400 mt-1">
+                {isLoadingSummary ? <Skeleton className="h-5 w-12" /> : summary?.inTransitCount ?? 0}
+              </div>
+              <div className="text-[10px] text-muted-foreground">{isLoadingSummary ? "—" : formatCurrency(summary?.inTransitAmount ?? 0)}</div>
             </CardContent>
           </Card>
         </div>

@@ -104,7 +104,7 @@ export function useGetDashboardSummary() {
       const today = new Date();
       let totalOutstanding = 0, overdueCount = 0, overdueAmount = 0, currentCount = 0,
         notDueCount = 0, disputedCount = 0, disputedAmount = 0, ptpCount = 0,
-        ptpAmountTotal = 0, weightedAgeDays = 0;
+        ptpAmountTotal = 0, inTransitCount = 0, inTransitAmount = 0, weightedAgeDays = 0;
       const customerMap = new Map<string, { customerName: string; outstanding: number; invoiceCount: number }>();
       for (const inv of invoices) {
         const outstanding = Number(inv.amount) - Number(inv.paid_amount);
@@ -117,8 +117,10 @@ export function useGetDashboardSummary() {
           overdueCount++; overdueAmount += outstanding;
         } else if (status === "current") currentCount++;
         else if (status === "not_due") notDueCount++;
-        if (inv.is_disputed) { disputedCount++; disputedAmount += outstanding; }
-        if (inv.ptp_date) { ptpCount++; ptpAmountTotal += inv.ptp_amount ? Number(inv.ptp_amount) : outstanding; }
+        const st = (inv.status || "").trim();
+        if (["PO Issue", "Billing Issue", "Disputed Billing"].includes(st)) { disputedCount++; disputedAmount += outstanding; }
+        if (st === "P2P (Promise to Pay)") { ptpCount++; ptpAmountTotal += outstanding; }
+        if (st === "In-Transit Payment") { inTransitCount++; inTransitAmount += outstanding; }
         const ex = customerMap.get(inv.customer_id);
         if (ex) { ex.outstanding += outstanding; ex.invoiceCount++; }
         else customerMap.set(inv.customer_id, { customerName: inv.customer_name, outstanding, invoiceCount: 1 });
@@ -130,7 +132,7 @@ export function useGetDashboardSummary() {
       return {
         totalOutstanding, totalInvoices: invoices.length, overdueCount, overdueAmount,
         currentCount, notDueCount, collectedThisMonth: 0, dso, disputedCount,
-        disputedAmount, ptpCount, ptpAmount: ptpAmountTotal, topCustomers,
+        disputedAmount, ptpCount, ptpAmount: ptpAmountTotal, inTransitCount, inTransitAmount, topCustomers,
       };
     },
   });
