@@ -219,7 +219,7 @@ export default function Dashboard() {
       </div>
 
       {/* Invoice Table */}
-      <div className="rounded-md border border-border bg-card overflow-x-auto">
+      <div className="w-full">
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent border-b-border bg-muted/30">
@@ -256,16 +256,16 @@ export default function Dashboard() {
               invoicesData?.invoices.map((invoice) => (
                 <TableRow key={invoice.id} className="hover:bg-muted/40 transition-colors">
                   <TableCell className="font-mono text-xs">{invoice.customerId}</TableCell>
-                  <TableCell className="font-medium whitespace-nowrap">{invoice.customerName}</TableCell>
-                  <TableCell className="font-mono text-sm whitespace-nowrap">{invoice.invoiceNumber}</TableCell>
-                  <TableCell className="text-sm whitespace-nowrap">{formatDate(invoice.issueDate)}</TableCell>
-                  <TableCell className="text-sm whitespace-nowrap">{formatDate(invoice.dueDate)}</TableCell>
+                  <TableCell className="font-medium">{invoice.customerName}</TableCell>
+                  <TableCell className="font-mono text-sm">{invoice.invoiceNumber}</TableCell>
+                  <TableCell className="text-sm">{formatDate(invoice.issueDate)}</TableCell>
+                  <TableCell className="text-sm">{formatDate(invoice.dueDate)}</TableCell>
                   <TableCell className="text-sm">{invoice.txnCurrency ?? "—"}</TableCell>
-                  <TableCell className="text-right font-mono text-sm whitespace-nowrap">{invoice.txnAmount != null ? invoice.txnAmount.toLocaleString() : "—"}</TableCell>
+                  <TableCell className="text-right font-mono text-sm">{invoice.txnAmount != null ? invoice.txnAmount.toLocaleString() : "—"}</TableCell>
                   <TableCell className="text-center font-mono text-sm">{invoice.daysAged ?? "—"}</TableCell>
-                  <TableCell className="text-right font-mono text-sm whitespace-nowrap">{formatCurrency(invoice.amount, "USD")}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{invoice.analystName ?? "—"}</TableCell>
-                  <TableCell className="text-sm whitespace-nowrap">{invoice.category ?? "—"}</TableCell>
+                  <TableCell className="text-right font-mono text-sm">{formatCurrency(invoice.amount, "USD")}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{invoice.analystName ?? "—"}</TableCell>
+                  <TableCell className="text-sm">{invoice.category ?? "—"}</TableCell>
                   <TableCell className="text-sm min-w-[200px]">{invoice.invoiceStage || "—"}</TableCell>
                   <TableCell>{<StatusCell invoice={invoice} />}</TableCell>
                   <TableCell>{<CommentsCell invoice={invoice} />}</TableCell>
