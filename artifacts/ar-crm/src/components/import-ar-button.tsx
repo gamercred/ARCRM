@@ -25,6 +25,10 @@ export function ImportArButton() {
         const n = Number(String(v).replace(/[^0-9.-]/g, ""));
         return isNaN(n) ? 0 : n;
       };
+      const intOrNull = (v: any) => {
+        const n = parseInt(String(v).replace(/[^0-9-]/g, ""), 10);
+        return isNaN(n) ? null : n;
+      };
       const slug = (name: string) =>
         name.trim().toLowerCase().replace(/[^a-z0-9]+/g, ".").replace(/^\.|\.$/g, "") +
         "@import.local";
@@ -61,7 +65,6 @@ export function ImportArButton() {
         const comments = String(r["Comments"] || "").trim();
         const collector = String(r["Collector"] || "").trim();
         const isDisputed = category.toLowerCase() === "dispute";
-        const noteParts = [category, subCategory, comments].filter(Boolean);
         return {
           id: crypto.randomUUID(),
           invoice_number: String(r["Invoice number"]),
@@ -75,7 +78,12 @@ export function ImportArButton() {
           analyst_id: collector ? nameToId.get(collector) ?? null : null,
           is_disputed: isDisputed,
           dispute_reason: isDisputed ? subCategory || comments || null : null,
-          notes: noteParts.join(" — ") || null,
+          txn_currency: String(r["Txn currency"] || "").trim() || null,
+          txn_amount: num(r["Txn amount"]),
+          days_aged: intOrNull(r["Days aged"]),
+          category: category || null,
+          sub_category: subCategory || null,
+          comments: comments || null,
         };
       });
 
