@@ -204,32 +204,37 @@ export default function Dashboard() {
       </div>
 
       {/* Invoice Table */}
-      <div className="rounded-md border border-border bg-card overflow-hidden">
+      <div className="rounded-md border border-border bg-card overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent border-b-border bg-muted/30">
+              <TableHead className="font-mono uppercase tracking-wider text-xs">Customer ID</TableHead>
+              <TableHead className="font-mono uppercase tracking-wider text-xs">Customer Name</TableHead>
               <TableHead className="font-mono uppercase tracking-wider text-xs">Invoice #</TableHead>
-              <TableHead className="font-mono uppercase tracking-wider text-xs">Customer</TableHead>
-              <TableHead className="font-mono uppercase tracking-wider text-xs text-right">Amount</TableHead>
+              <TableHead className="font-mono uppercase tracking-wider text-xs">Invoice Date</TableHead>
               <TableHead className="font-mono uppercase tracking-wider text-xs">Due Date</TableHead>
-              <TableHead className="font-mono uppercase tracking-wider text-xs text-center">Days OD</TableHead>
-              <TableHead className="font-mono uppercase tracking-wider text-xs">Status</TableHead>
-              <TableHead className="font-mono uppercase tracking-wider text-xs">Analyst</TableHead>
-              <TableHead className="font-mono uppercase tracking-wider text-xs">Flags</TableHead>
+              <TableHead className="font-mono uppercase tracking-wider text-xs">Txn Ccy</TableHead>
+              <TableHead className="font-mono uppercase tracking-wider text-xs text-right">Txn Amount</TableHead>
+              <TableHead className="font-mono uppercase tracking-wider text-xs text-center">Days Aged</TableHead>
+              <TableHead className="font-mono uppercase tracking-wider text-xs text-right">Total Open (USD)</TableHead>
+              <TableHead className="font-mono uppercase tracking-wider text-xs">Collector</TableHead>
+              <TableHead className="font-mono uppercase tracking-wider text-xs">Category</TableHead>
+              <TableHead className="font-mono uppercase tracking-wider text-xs">Sub Category</TableHead>
+              <TableHead className="font-mono uppercase tracking-wider text-xs">Comments</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoadingInvoices ? (
               Array.from({ length: 8 }).map((_, i) => (
                 <TableRow key={i}>
-                  {Array.from({ length: 8 }).map((_, j) => (
+                  {Array.from({ length: 13 }).map((_, j) => (
                     <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
                   ))}
                 </TableRow>
               ))
             ) : invoicesData?.invoices.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-10 text-muted-foreground">No invoices found.</TableCell>
+                <TableCell colSpan={13} className="text-center py-10 text-muted-foreground">No invoices found.</TableCell>
               </TableRow>
             ) : (
               invoicesData?.invoices.map((invoice) => (
@@ -238,29 +243,19 @@ export default function Dashboard() {
                   className="cursor-pointer hover:bg-muted/40 transition-colors"
                   onClick={() => setSelectedInvoiceId(invoice.id)}
                 >
-                  <TableCell className="font-mono text-sm">{invoice.invoiceNumber}</TableCell>
-                  <TableCell className="font-medium">{invoice.customerName}</TableCell>
-                  <TableCell className="text-right font-mono text-sm">{formatCurrency(invoice.amount, invoice.currency)}</TableCell>
-                  <TableCell className="text-sm">{formatDate(invoice.dueDate)}</TableCell>
-                  <TableCell className="text-center font-mono text-sm">
-                    {invoice.overdueDays > 0 ? (
-                      <span className="text-destructive font-semibold">{invoice.overdueDays}</span>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell><InvoiceStatusBadge status={invoice.status} /></TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{invoice.analystName ?? "—"}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
-                      {invoice.isDisputed && (
-                        <Badge className="bg-amber-500/20 text-amber-400 text-[9px] px-1 py-0 h-4 hover:bg-amber-500/30">DISP</Badge>
-                      )}
-                      {invoice.ptpDate && (
-                        <Badge className="bg-cyan-500/20 text-cyan-400 text-[9px] px-1 py-0 h-4 hover:bg-cyan-500/30">PTP</Badge>
-                      )}
-                    </div>
-                  </TableCell>
+                  <TableCell className="font-mono text-xs">{invoice.customerId}</TableCell>
+                  <TableCell className="font-medium whitespace-nowrap">{invoice.customerName}</TableCell>
+                  <TableCell className="font-mono text-sm whitespace-nowrap">{invoice.invoiceNumber}</TableCell>
+                  <TableCell className="text-sm whitespace-nowrap">{formatDate(invoice.issueDate)}</TableCell>
+                  <TableCell className="text-sm whitespace-nowrap">{formatDate(invoice.dueDate)}</TableCell>
+                  <TableCell className="text-sm">{invoice.txnCurrency ?? "—"}</TableCell>
+                  <TableCell className="text-right font-mono text-sm whitespace-nowrap">{invoice.txnAmount != null ? invoice.txnAmount.toLocaleString() : "—"}</TableCell>
+                  <TableCell className="text-center font-mono text-sm">{invoice.daysAged ?? "—"}</TableCell>
+                  <TableCell className="text-right font-mono text-sm whitespace-nowrap">{formatCurrency(invoice.amount, "USD")}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{invoice.analystName ?? "—"}</TableCell>
+                  <TableCell className="text-sm whitespace-nowrap">{invoice.category ?? "—"}</TableCell>
+                  <TableCell className="text-sm whitespace-nowrap">{invoice.subCategory ?? "—"}</TableCell>
+                  <TableCell className="text-sm max-w-[240px] truncate" title={invoice.comments ?? ""}>{invoice.comments ?? "—"}</TableCell>
                 </TableRow>
               ))
             )}

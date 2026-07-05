@@ -56,6 +56,12 @@ function formatInvoice(row: any, analystMap: Map<number, string>, today: Date) {
     ptpAmount: row.ptp_amount != null ? Number(row.ptp_amount) : null,
     isDisputed: row.is_disputed ?? false,
     disputeReason: row.dispute_reason ?? null,
+    txnCurrency: row.txn_currency ?? null,
+    txnAmount: row.txn_amount != null ? Number(row.txn_amount) : null,
+    daysAged: row.days_aged ?? null,
+    category: row.category ?? null,
+    subCategory: row.sub_category ?? null,
+    comments: row.comments ?? null,
   };
 }
 
