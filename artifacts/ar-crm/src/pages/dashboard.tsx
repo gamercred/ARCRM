@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { ImportArButton } from "@/components/import-ar-button";
+import { AnalystPicker } from "@/components/analyst-picker";
+import { StatusCell } from "@/components/status-cell";
+import { CommentsCell } from "@/components/comments-cell";
 import { useGetDashboardSummary, useGetDashboardAging, useListInvoices, ListInvoicesStatus, useListAnalysts } from "@/lib/supabase-hooks";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -68,6 +71,7 @@ export default function Dashboard() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">AR Dashboard</h1>
         <div className="flex items-center gap-3">
+          <AnalystPicker />
           <ImportArButton />
           <div className="text-xs text-muted-foreground">
             As of {formatDate(new Date().toISOString())}
@@ -219,7 +223,8 @@ export default function Dashboard() {
               <TableHead className="font-mono uppercase tracking-wider text-xs text-right">Total Open (USD)</TableHead>
               <TableHead className="font-mono uppercase tracking-wider text-xs">Collector</TableHead>
               <TableHead className="font-mono uppercase tracking-wider text-xs">Category</TableHead>
-              <TableHead className="font-mono uppercase tracking-wider text-xs">Sub Category</TableHead>
+              <TableHead className="font-mono uppercase tracking-wider text-xs">Invoice Stage</TableHead>
+              <TableHead className="font-mono uppercase tracking-wider text-xs">Status</TableHead>
               <TableHead className="font-mono uppercase tracking-wider text-xs">Comments</TableHead>
             </TableRow>
           </TableHeader>
@@ -227,22 +232,18 @@ export default function Dashboard() {
             {isLoadingInvoices ? (
               Array.from({ length: 8 }).map((_, i) => (
                 <TableRow key={i}>
-                  {Array.from({ length: 13 }).map((_, j) => (
+                  {Array.from({ length: 14 }).map((_, j) => (
                     <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
                   ))}
                 </TableRow>
               ))
             ) : invoicesData?.invoices.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={13} className="text-center py-10 text-muted-foreground">No invoices found.</TableCell>
+                <TableCell colSpan={14} className="text-center py-10 text-muted-foreground">No invoices found.</TableCell>
               </TableRow>
             ) : (
               invoicesData?.invoices.map((invoice) => (
-                <TableRow
-                  key={invoice.id}
-                  className="cursor-pointer hover:bg-muted/40 transition-colors"
-                  onClick={() => setSelectedInvoiceId(invoice.id)}
-                >
+                <TableRow key={invoice.id} className="hover:bg-muted/40 transition-colors">
                   <TableCell className="font-mono text-xs">{invoice.customerId}</TableCell>
                   <TableCell className="font-medium whitespace-nowrap">{invoice.customerName}</TableCell>
                   <TableCell className="font-mono text-sm whitespace-nowrap">{invoice.invoiceNumber}</TableCell>
@@ -254,8 +255,9 @@ export default function Dashboard() {
                   <TableCell className="text-right font-mono text-sm whitespace-nowrap">{formatCurrency(invoice.amount, "USD")}</TableCell>
                   <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{invoice.analystName ?? "—"}</TableCell>
                   <TableCell className="text-sm whitespace-nowrap">{invoice.category ?? "—"}</TableCell>
-                  <TableCell className="text-sm whitespace-nowrap">{invoice.subCategory ?? "—"}</TableCell>
-                  <TableCell className="text-sm max-w-[240px] truncate" title={invoice.comments ?? ""}>{invoice.comments ?? "—"}</TableCell>
+                  <TableCell className="text-sm min-w-[200px]">{invoice.invoiceStage || "—"}</TableCell>
+                  <TableCell>{<StatusCell invoice={invoice} />}</TableCell>
+                  <TableCell>{<CommentsCell invoice={invoice} />}</TableCell>
                 </TableRow>
               ))
             )}

@@ -31,6 +31,21 @@ async function fetchAllAnalysts() {
   return data ?? [];
 }
 
+function computeStage(dpd: number): string {
+  if (dpd >= 150) return "Write Off";
+  if (dpd >= 149) return "Termination";
+  if (dpd > 139) return "Demand Letter sent to customer";
+  if (dpd > 120) return "Initiated Demand Letter in Ironclad";
+  if (dpd > 119) return "Hardpaywall Implemented";
+  if (dpd > 95) return "Suspension Notification to the customer";
+  if (dpd > 85) return "Sent to Legal review for Hardpaywall";
+  if (dpd > 75) return "Sent to Soft Paywall";
+  if (dpd > 60) return "Escalated to Sales email 2 - AM/CSM";
+  if (dpd > 50) return "Escalated to Sales email 1 - AM/CSM";
+  if (dpd > 40) return "Sales Copied in the email";
+  return "";
+}
+
 function formatInvoice(row: any, analystMap: Map<number, string>, today: Date) {
   const { status, overdueDays } = computeStatus(row.due_date, today);
   return {
@@ -46,6 +61,7 @@ function formatInvoice(row: any, analystMap: Map<number, string>, today: Date) {
     dueDate: row.due_date,
     status,
     overdueDays,
+    invoiceStage: computeStage(Number(row.days_aged ?? 0)),
     analystId: row.analyst_id ?? null,
     analystName: row.analyst_id ? analystMap.get(row.analyst_id) ?? null : null,
     netsuiteId: row.netsuite_id ?? null,
@@ -59,7 +75,7 @@ function formatInvoice(row: any, analystMap: Map<number, string>, today: Date) {
     txnCurrency: row.txn_currency ?? null,
     txnAmount: row.txn_amount != null ? Number(row.txn_amount) : null,
     daysAged: row.days_aged ?? null,
-    category: row.category ?? null,
+    category: Number(row.days_aged ?? 0) > 0 ? "Due" : "Yet to be due",
     subCategory: row.sub_category ?? null,
     comments: row.comments ?? null,
   };
