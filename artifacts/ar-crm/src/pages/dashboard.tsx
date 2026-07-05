@@ -3,6 +3,7 @@ import { ImportArButton } from "@/components/import-ar-button";
 import { AnalystPicker } from "@/components/analyst-picker";
 import { StatusCell } from "@/components/status-cell";
 import { CommentsCell } from "@/components/comments-cell";
+import { ColumnFilter } from "@/components/column-filter";
 import { useGetDashboardSummary, useGetDashboardAging, useListInvoices, ListInvoicesStatus, useListAnalysts } from "@/lib/supabase-hooks";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -73,10 +74,16 @@ export default function Dashboard() {
     { key: "comments", label: "Comments", get: (i) => i.comments },
   ];
   const rawInvoices = invoicesData?.invoices ?? [];
+  const distinctVals: Record<string, string[]> = {};
+  for (const c of COLS) {
+    const set = new Set<string>();
+    for (const inv of rawInvoices) set.add(String(c.get(inv) ?? ""));
+    distinctVals[c.key] = Array.from(set).sort();
+  }
   const filteredInvoices = rawInvoices.filter((inv: any) =>
     COLS.every((c) => {
-      const f = (colFilters[c.key] || "").trim().toLowerCase();
-      return !f || String(c.get(inv) ?? "").toLowerCase().includes(f);
+      const f = colFilters[c.key] || "";
+      return !f || String(c.get(inv) ?? "") === f;
     }),
   );
 
@@ -249,17 +256,12 @@ export default function Dashboard() {
           <TableHeader>
             <TableRow className="hover:bg-transparent border-b-border bg-muted/30">
               {COLS.map((c) => (
-                <TableHead key={c.key} className="text-sm font-semibold p-2">{c.label}</TableHead>
-              ))}
-            </TableRow>
-            <TableRow className="hover:bg-transparent">
-              {COLS.map((c) => (
-                <TableHead key={c.key} className="p-1">
-                  <input
+                <TableHead key={c.key} className="text-sm font-semibold p-2">
+                  <ColumnFilter
+                    label={c.label}
+                    values={distinctVals[c.key] || []}
                     value={colFilters[c.key] || ""}
-                    onChange={(e) => setColFilters((prev) => ({ ...prev, [c.key]: e.target.value }))}
-                    placeholder="Filter"
-                    className="w-full bg-background border border-border rounded px-1 py-0.5 text-xs font-normal"
+                    onChange={(v) => setColFilters((prev) => ({ ...prev, [c.key]: v }))}
                   />
                 </TableHead>
               ))}
