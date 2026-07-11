@@ -8,7 +8,7 @@ import { useListInvoices } from "@/lib/supabase-hooks";
 export default function Customers() {
   const [, navigate] = useLocation();
   const { data: invoicesData, isLoading } = useListInvoices({ pageSize: 100000 });
-  const invoices = invoicesData?.invoices ?? [];
+  const invoices = Array.isArray(invoicesData?.invoices) ? invoicesData.invoices : [];
   const [search, setSearch] = useState("");
 
   const map = new Map<string, { id: any; name: string; count: number; outstanding: number }>();

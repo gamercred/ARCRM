@@ -21,7 +21,7 @@ export default function AnalystDashboard() {
   const analyst = analysts?.find((a: any) => a.id === analystId);
 
   const { data: invoicesData, isLoading } = useListInvoices({ analystId, pageSize: 100000 });
-  const rawInvoices = invoicesData?.invoices ?? [];
+  const rawInvoices = Array.isArray(invoicesData?.invoices) ? invoicesData.invoices : [];
 
   const totalOutstanding = rawInvoices.reduce((sum: number, i: any) => {
     const out = Number(i.amount) - Number(i.paidAmount ?? 0);

@@ -22,7 +22,7 @@ export default function CustomerDetail() {
   const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" } | null>(null);
 
   const { data: invoicesData, isLoading } = useListInvoices({ pageSize: 100000 });
-  const rawInvoices = (invoicesData?.invoices ?? []).filter(
+  const rawInvoices = (Array.isArray(invoicesData?.invoices) ? invoicesData.invoices : []).filter(
     (i: any) => String(i.customerId) === String(customerId),
   );
   const customerName = rawInvoices[0]?.customerName ?? "Customer";
