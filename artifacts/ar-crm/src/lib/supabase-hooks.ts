@@ -77,7 +77,7 @@ function formatInvoice(row: any, analystMap: Map<number, string>, today: Date) {
     txnCurrency: row.txn_currency ?? null,
     txnAmount: row.txn_amount != null ? Number(row.txn_amount) : null,
     daysAged: Math.floor((today.getTime() - new Date(row.due_date).getTime()) / 86400000),
-    category: Math.floor((today.getTime() - new Date(row.due_date).getTime()) / 86400000) > 0 ? "Due" : "Yet to be due",
+    category: Math.floor((today.getTime() - new Date(row.due_date).getTime()) / 86400000) > 0 ? "Due" : "Not due",
     subCategory: row.sub_category ?? null,
     comments: row.comments ?? null,
   };
