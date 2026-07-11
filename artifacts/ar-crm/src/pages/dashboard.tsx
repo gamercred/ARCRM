@@ -150,35 +150,35 @@ export default function Dashboard() {
         <div className="grid grid-cols-3 gap-2 col-span-2 lg:col-span-2">
           <Card className="bg-card">
             <CardContent className="p-3">
-              <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
                 <AlertTriangle className="w-3 h-3 text-amber-400" /> Disputed
               </div>
-              <div className="text-lg font-bold font-mono text-amber-400 mt-1">
+              <div className="text-2xl font-bold font-mono text-amber-400 mt-1">
                 {isLoadingSummary ? <Skeleton className="h-5 w-12" /> : summary?.disputedCount ?? 0}
               </div>
-              <div className="text-[10px] text-muted-foreground">{isLoadingSummary ? "—" : formatCurrency(summary?.disputedAmount ?? 0)}</div>
+              <div className="text-xs text-muted-foreground mt-1">{isLoadingSummary ? "—" : formatCurrency(summary?.disputedAmount ?? 0)}</div>
             </CardContent>
           </Card>
           <Card className="bg-card">
             <CardContent className="p-3">
-              <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
                 <FileCheck className="w-3 h-3 text-cyan-400" /> PTP Active
               </div>
-              <div className="text-lg font-bold font-mono text-cyan-400 mt-1">
+              <div className="text-2xl font-bold font-mono text-cyan-400 mt-1">
                 {isLoadingSummary ? <Skeleton className="h-5 w-12" /> : summary?.ptpCount ?? 0}
               </div>
-              <div className="text-[10px] text-muted-foreground">{isLoadingSummary ? "—" : formatCurrency(summary?.ptpAmount ?? 0)}</div>
+              <div className="text-xs text-muted-foreground mt-1">{isLoadingSummary ? "—" : formatCurrency(summary?.ptpAmount ?? 0)}</div>
             </CardContent>
           </Card>
           <Card className="bg-card">
             <CardContent className="p-3">
-              <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
                 <FileCheck className="w-3 h-3 text-blue-400" /> In-Transit
               </div>
-              <div className="text-lg font-bold font-mono text-blue-400 mt-1">
+              <div className="text-2xl font-bold font-mono text-blue-400 mt-1">
                 {isLoadingSummary ? <Skeleton className="h-5 w-12" /> : summary?.inTransitCount ?? 0}
               </div>
-              <div className="text-[10px] text-muted-foreground">{isLoadingSummary ? "—" : formatCurrency(summary?.inTransitAmount ?? 0)}</div>
+              <div className="text-xs text-muted-foreground mt-1">{isLoadingSummary ? "—" : formatCurrency(summary?.inTransitAmount ?? 0)}</div>
             </CardContent>
           </Card>
         </div>
