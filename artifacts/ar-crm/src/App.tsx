@@ -8,6 +8,8 @@ import Analysts from "@/pages/analysts";
 import AnalystDashboard from "@/pages/analyst-dashboard";
 import Mailbox from "@/pages/mailbox";
 import AgingReport from "@/pages/aging-report";
+import Customers from "@/pages/customers";
+import CustomerDetail from "@/pages/customer-detail";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -20,6 +22,8 @@ function Router() {
         <Route path="/aging-report" component={AgingReport} />
         <Route path="/analysts" component={Analysts} />
         <Route path="/analyst/:id" component={AnalystDashboard} />
+        <Route path="/customers" component={Customers} />
+        <Route path="/customer/:id" component={CustomerDetail} />
         <Route path="/mailbox" component={Mailbox} />
         <Route component={NotFound} />
       </Switch>
