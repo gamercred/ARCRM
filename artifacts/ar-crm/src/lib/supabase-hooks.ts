@@ -190,11 +190,11 @@ export function useListInvoices(params: {
       let formatted = invoices.map((inv: any) => formatInvoice(inv, analystMap, today));
       if (params.status && params.status !== "all") formatted = formatted.filter((i) => i.status === params.status);
       if (params.analystId != null) formatted = formatted.filter((i) => i.analystId === params.analystId);
-      if (params.customerId) formatted = formatted.filter((i) => i.customerId === params.customerId);
+      if (params.customerId) formatted = formatted.filter((i) => String(i.customerId) === String(params.customerId));
       if (params.disputed != null) formatted = formatted.filter((i) => i.isDisputed === params.disputed);
       if (params.search) {
         const q = params.search.toLowerCase();
-        formatted = formatted.filter((i) => i.invoiceNumber.toLowerCase().includes(q) || i.customerName.toLowerCase().includes(q));
+        formatted = formatted.filter((i) => String(i.invoiceNumber ?? "").toLowerCase().includes(q) || String(i.customerName ?? "").toLowerCase().includes(q));
       }
       const total = formatted.length;
       const p = params.page ?? 1;
