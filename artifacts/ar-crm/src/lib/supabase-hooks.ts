@@ -63,6 +63,7 @@ function formatInvoice(row: any, analystMap: Map<number, string>, today: Date) {
     overdueDays,
     invoiceStage: row.invoice_stage ?? computeStage(Math.floor((today.getTime() - new Date(row.due_date).getTime()) / 86400000)),
     manualStatus: row.status ?? null,
+    actualInvoiceStage: row.actual_invoice_stage ?? null,
     analystId: row.analyst_id ?? null,
     analystName: row.analyst_id ? analystMap.get(row.analyst_id) ?? null : null,
     netsuiteId: row.netsuite_id ?? null,
