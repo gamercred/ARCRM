@@ -10,10 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { InvoiceStatusBadge } from "@/components/invoice-status-badge";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { Skeleton } from "@/components/ui/skeleton";
-import { InvoiceDrawer } from "@/components/invoice-drawer";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, TrendingDown, Clock, FileCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -343,7 +341,6 @@ export default function Dashboard() {
         </div>
       )}
 
-      <InvoiceDrawer invoiceId={selectedInvoiceId} onClose={() => setSelectedInvoiceId(null)} />
     </div>
   );
 }
