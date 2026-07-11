@@ -8,7 +8,7 @@ import { ArrowLeft } from "lucide-react";
 import { useListInvoices, useListAnalysts } from "@/lib/supabase-hooks";
 import { StatusCell } from "@/components/status-cell";
 import { ActualStageCell } from "@/components/actual-stage-cell";
-import { CommentsCell } from "@/components/comments-cell";
+import { CommentHistoryCell } from "@/components/comment-history-cell";
 import { ColumnFilter } from "@/components/column-filter";
 
 export default function AnalystDashboard() {
@@ -165,7 +165,7 @@ export default function AnalystDashboard() {
                     <TableCell className="text-sm p-2 break-words">{invoice.invoiceStage || "—"}</TableCell>
                     <TableCell className="text-sm p-2 break-words">{<ActualStageCell invoice={invoice} />}</TableCell>
                     <TableCell className="text-sm p-2 break-words">{<StatusCell invoice={invoice} />}</TableCell>
-                    <TableCell className="text-sm p-2 break-words">{<CommentsCell invoice={invoice} />}</TableCell>
+                    <TableCell className="text-sm p-2 break-words">{<CommentHistoryCell invoice={invoice} />}</TableCell>
                   </TableRow>
                 ))
               )}

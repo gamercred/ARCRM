@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ImportArButton } from "@/components/import-ar-button";
 import { AnalystPicker } from "@/components/analyst-picker";
 import { StatusCell } from "@/components/status-cell";
-import { CommentsCell } from "@/components/comments-cell";
+import { CommentHistoryCell } from "@/components/comment-history-cell";
 import { ColumnFilter } from "@/components/column-filter";
 import { ActualStageCell } from "@/components/actual-stage-cell";
 import { useGetDashboardSummary, useGetDashboardAging, useListInvoices, ListInvoicesStatus, useListAnalysts } from "@/lib/supabase-hooks";
@@ -329,7 +329,7 @@ export default function Dashboard() {
                   <TableCell className="text-sm p-2 break-words">{invoice.invoiceStage || "—"}</TableCell>
                   <TableCell className="text-sm p-2 break-words">{<ActualStageCell invoice={invoice} editable={false} />}</TableCell>
                   <TableCell className="text-sm p-2 break-words">{<StatusCell invoice={invoice} editable={false} />}</TableCell>
-                  <TableCell className="text-sm p-2 break-words">{<CommentsCell invoice={invoice} editable={false} />}</TableCell>
+                  <TableCell className="text-sm p-2 break-words">{<CommentHistoryCell invoice={invoice} editable={false} />}</TableCell>
                 </TableRow>
               ))
             )}
