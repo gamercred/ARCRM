@@ -15,7 +15,7 @@ export const STATUS_OPTIONS = [
   "Paid",
 ];
 
-export function StatusCell({ invoice }: { invoice: any }) {
+export function StatusCell({ invoice, editable = true }: { invoice: any; editable?: boolean }) {
   const qc = useQueryClient();
   const [value, setValue] = useState<string>(invoice.manualStatus ?? "");
   const [saving, setSaving] = useState(false);
@@ -41,6 +41,7 @@ export function StatusCell({ invoice }: { invoice: any }) {
     }
   }
 
+  if (!editable) return <span className="text-sm">{value || "—"}</span>;
   return (
     <select
       value={value}

@@ -17,7 +17,7 @@ export const STAGE_OPTIONS = [
   "Write Off",
 ];
 
-export function ActualStageCell({ invoice }: { invoice: any }) {
+export function ActualStageCell({ invoice, editable = true }: { invoice: any; editable?: boolean }) {
   const qc = useQueryClient();
   const [value, setValue] = useState<string>(invoice.actualInvoiceStage ?? "");
   const [saving, setSaving] = useState(false);
@@ -41,6 +41,7 @@ export function ActualStageCell({ invoice }: { invoice: any }) {
     }
   }
 
+  if (!editable) return <span className="text-sm">{value || "—"}</span>;
   return (
     <select
       value={value}

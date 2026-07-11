@@ -327,9 +327,9 @@ export default function Dashboard() {
                   <TableCell className="text-sm p-2 break-words">{invoice.analystName ?? "—"}</TableCell>
                   <TableCell className="text-sm p-2 break-words">{invoice.category ?? "—"}</TableCell>
                   <TableCell className="text-sm p-2 break-words">{invoice.invoiceStage || "—"}</TableCell>
-                  <TableCell className="text-sm p-2 break-words">{<ActualStageCell invoice={invoice} />}</TableCell>
-                  <TableCell className="text-sm p-2 break-words">{<StatusCell invoice={invoice} />}</TableCell>
-                  <TableCell className="text-sm p-2 break-words">{<CommentsCell invoice={invoice} />}</TableCell>
+                  <TableCell className="text-sm p-2 break-words">{<ActualStageCell invoice={invoice} editable={false} />}</TableCell>
+                  <TableCell className="text-sm p-2 break-words">{<StatusCell invoice={invoice} editable={false} />}</TableCell>
+                  <TableCell className="text-sm p-2 break-words">{<CommentsCell invoice={invoice} editable={false} />}</TableCell>
                 </TableRow>
               ))
             )}

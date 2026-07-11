@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { logAudit } from "@/lib/audit";
 
-export function CommentsCell({ invoice }: { invoice: any }) {
+export function CommentsCell({ invoice, editable = true }: { invoice: any; editable?: boolean }) {
   const qc = useQueryClient();
   const original = invoice.comments ?? "";
   const [value, setValue] = useState<string>(original);
@@ -24,6 +24,7 @@ export function CommentsCell({ invoice }: { invoice: any }) {
     if (error) alert("Could not save comment: " + error.message);
   }
 
+  if (!editable) return <span className="text-sm break-words">{value || "—"}</span>;
   return (
     <input
       value={value}
