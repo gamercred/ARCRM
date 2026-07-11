@@ -264,7 +264,7 @@ export default function CustomerDetail() {
                   New Note
                 </button>
               </div>
-              <div className="space-y-3 max-h-[520px] overflow-y-auto">
+              <div className="space-y-3 max-h-[900px] overflow-y-auto">
                 {customerComments.length === 0 ? (
                   <p className="text-sm text-muted-foreground">No notes yet.</p>
                 ) : (
