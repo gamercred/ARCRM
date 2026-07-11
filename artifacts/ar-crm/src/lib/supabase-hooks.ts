@@ -87,12 +87,24 @@ export function useListAnalysts() {
   return useQuery({
     queryKey: ["analysts"],
     queryFn: async () => {
-      const rows = await fetchAllAnalysts();
+      const [rows, invoices] = await Promise.all([fetchAllAnalysts(), fetchAllInvoices()]);
+      const stats = new Map<number, { count: number; outstanding: number }>();
+      for (const inv of invoices) {
+        const aid = inv.analyst_id;
+        if (aid == null) continue;
+        const out = Number(inv.amount) - Number(inv.paid_amount);
+        const cur = stats.get(aid) || { count: 0, outstanding: 0 };
+        cur.count++;
+        cur.outstanding += out > 0 ? out : 0;
+        stats.set(aid, cur);
+      }
       return rows.map((a: any) => ({
         id: a.id,
         name: a.name,
         email: a.email,
         createdAt: a.created_at,
+        portfolioCount: stats.get(a.id)?.count ?? 0,
+        totalOutstanding: stats.get(a.id)?.outstanding ?? 0,
       }));
     },
   });

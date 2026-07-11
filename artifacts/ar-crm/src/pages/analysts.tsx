@@ -1,4 +1,4 @@
-import { useListAnalysts } from "@workspace/api-client-react";
+import { useListAnalysts } from "@/lib/supabase-hooks";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/format";
 import { Skeleton } from "@/components/ui/skeleton";
