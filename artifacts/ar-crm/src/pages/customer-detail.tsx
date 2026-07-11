@@ -47,7 +47,7 @@ export default function CustomerDetail() {
         : { label: "Low Risk", cls: "bg-emerald-500/20 text-emerald-400" };
 
   const { data: allComments } = useQuery({
-    queryKey: ["invoice-comments"],
+    queryKey: ["invoice-comments-all"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("invoice_comments")
@@ -59,7 +59,7 @@ export default function CustomerDetail() {
     },
   });
   const invoiceNumbers = new Set(rawInvoices.map((i: any) => String(i.invoiceNumber)));
-  const customerComments = (allComments ?? []).filter((c: any) => invoiceNumbers.has(String(c.invoice_number)));
+  const customerComments = (Array.isArray(allComments) ? allComments : []).filter((c: any) => invoiceNumbers.has(String(c.invoice_number)));
 
   const [noteInvoice, setNoteInvoice] = useState("");
   const [noteDate, setNoteDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -84,6 +84,7 @@ export default function CustomerDetail() {
     }
     setNoteText("");
     qc.invalidateQueries({ queryKey: ["invoice-comments"] });
+    qc.invalidateQueries({ queryKey: ["invoice-comments-all"] });
   }
 
   const COLS: { key: string; label: string; get: (i: any) => any; sortable?: boolean }[] = [
