@@ -1,8 +1,8 @@
+import { Link } from "wouter";
 import { useState } from "react";
 import { ImportArButton } from "@/components/import-ar-button";
 import { AnalystPicker } from "@/components/analyst-picker";
 import { StatusCell } from "@/components/status-cell";
-import { CommentHistoryCell } from "@/components/comment-history-cell";
 import { ColumnFilter } from "@/components/column-filter";
 import { ActualStageCell } from "@/components/actual-stage-cell";
 import { useGetDashboardSummary, useGetDashboardAging, useListInvoices, ListInvoicesStatus, useListAnalysts } from "@/lib/supabase-hooks";
@@ -73,7 +73,6 @@ export default function Dashboard() {
     { key: "invoiceStage", label: "Invoice Stage", get: (i) => i.invoiceStage },
     { key: "actualInvoiceStage", label: "Actual Invoice Stage", get: (i) => i.actualInvoiceStage },
     { key: "manualStatus", label: "Status", get: (i) => i.manualStatus },
-    { key: "comments", label: "Comments", get: (i) => i.comments },
   ];
   const rawInvoices = invoicesData?.invoices ?? [];
   const distinctVals: Record<string, string[]> = {};
@@ -301,20 +300,20 @@ export default function Dashboard() {
             {isLoadingInvoices ? (
               Array.from({ length: 8 }).map((_, i) => (
                 <TableRow key={i}>
-                  {Array.from({ length: 15 }).map((_, j) => (
+                  {Array.from({ length: 14 }).map((_, j) => (
                     <TableCell key={j} className="p-2"><Skeleton className="h-4 w-full" /></TableCell>
                   ))}
                 </TableRow>
               ))
             ) : filteredInvoices.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={15} className="text-center py-10 text-muted-foreground">No invoices found.</TableCell>
+                <TableCell colSpan={14} className="text-center py-10 text-muted-foreground">No invoices found.</TableCell>
               </TableRow>
             ) : (
               sortedInvoices.map((invoice: any) => (
                 <TableRow key={invoice.id} className="hover:bg-muted/40 transition-colors align-top">
                   <TableCell className="text-sm p-2 break-words">{invoice.customerId}</TableCell>
-                  <TableCell className="text-sm p-2 break-words">{invoice.customerName}</TableCell>
+                  <TableCell className="text-sm p-2 break-words"><Link href={`/customer/${invoice.customerId}`} className="text-primary hover:underline">{invoice.customerName}</Link></TableCell>
                   <TableCell className="text-sm p-2 break-words">{invoice.invoiceNumber}</TableCell>
                   <TableCell className="text-sm p-2 break-words">{formatDate(invoice.issueDate)}</TableCell>
                   <TableCell className="text-sm p-2 break-words">{formatDate(invoice.dueDate)}</TableCell>
@@ -327,7 +326,6 @@ export default function Dashboard() {
                   <TableCell className="text-sm p-2 break-words">{invoice.invoiceStage || "—"}</TableCell>
                   <TableCell className="text-sm p-2 break-words">{<ActualStageCell invoice={invoice} editable={false} />}</TableCell>
                   <TableCell className="text-sm p-2 break-words">{<StatusCell invoice={invoice} editable={false} />}</TableCell>
-                  <TableCell className="text-sm p-2 break-words">{<CommentHistoryCell invoice={invoice} editable={false} />}</TableCell>
                 </TableRow>
               ))
             )}
