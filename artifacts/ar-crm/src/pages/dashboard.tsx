@@ -49,6 +49,7 @@ export default function Dashboard() {
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
   const [colFilters, setColFilters] = useState<Record<string, string>>({});
   const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" } | null>(null);
+  const [capsuleFilter, setCapsuleFilter] = useState<string | null>(null);
 
   const { data: invoicesData, isLoading: isLoadingInvoices } = useListInvoices({
     search: search || undefined,
@@ -83,12 +84,23 @@ export default function Dashboard() {
     for (const inv of rawInvoices) set.add(String(c.get(inv) ?? ""));
     distinctVals[c.key] = Array.from(set).sort();
   }
-  const filteredInvoices = rawInvoices.filter((inv: any) =>
-    COLS.every((c) => {
+  const CAPSULE_STATUSES: Record<string, string[]> = {
+    disputed: ["PO Issue", "Billing Issue", "Disputed Billing"],
+    ptp: ["P2P (Promise to Pay)", "In-Transit Payment"],
+    intransit: ["In-Transit Payment"],
+  };
+  const filteredInvoices = rawInvoices.filter((inv: any) => {
+    const colOk = COLS.every((c) => {
       const f = colFilters[c.key] || "";
       return !f || String(c.get(inv) ?? "") === f;
-    }),
-  );
+    });
+    if (!colOk) return false;
+    if (capsuleFilter) {
+      const set = CAPSULE_STATUSES[capsuleFilter] || [];
+      if (!set.includes(String(inv.manualStatus ?? ""))) return false;
+    }
+    return true;
+  });
   const sortedInvoices = [...filteredInvoices];
   if (sort && (sort.key === "daysAged" || sort.key === "amount")) {
     const col = COLS.find((c) => c.key === sort.key);
@@ -126,7 +138,7 @@ export default function Dashboard() {
       </div>
 
       {/* KPI Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard
           label="Total Outstanding"
           value={isLoadingSummary ? <Skeleton className="h-7 w-28" /> : formatCurrency(summary?.totalOutstanding ?? 0)}
@@ -147,8 +159,8 @@ export default function Dashboard() {
           color={summary && summary.dso > 45 ? "text-orange-400" : "text-emerald-400"}
           icon={Clock}
         />
-        <div className="grid grid-cols-3 gap-2 col-span-2 lg:col-span-2">
-          <Card className="bg-card">
+        <div className="grid grid-cols-2 gap-2 col-span-2 lg:col-span-1">
+          <Card onClick={() => setCapsuleFilter(capsuleFilter === "disputed" ? null : "disputed")} className={"bg-card cursor-pointer transition " + (capsuleFilter === "disputed" ? "ring-2 ring-amber-400" : "hover:bg-muted/40")}>
             <CardContent className="p-3">
               <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
                 <AlertTriangle className="w-3 h-3 text-amber-400" /> Disputed
@@ -159,26 +171,15 @@ export default function Dashboard() {
               <div className="text-xs text-muted-foreground mt-1">{isLoadingSummary ? "—" : formatCurrency(summary?.disputedAmount ?? 0)}</div>
             </CardContent>
           </Card>
-          <Card className="bg-card">
+          <Card onClick={() => setCapsuleFilter(capsuleFilter === "ptp" ? null : "ptp")} className={"bg-card cursor-pointer transition " + (capsuleFilter === "ptp" ? "ring-2 ring-cyan-400" : "hover:bg-muted/40")}>
             <CardContent className="p-3">
               <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                <FileCheck className="w-3 h-3 text-cyan-400" /> PTP Active
+                <FileCheck className="w-3 h-3 text-cyan-400" /> PTP / In-Transit
               </div>
               <div className="text-2xl font-bold font-mono text-cyan-400 mt-1">
-                {isLoadingSummary ? <Skeleton className="h-5 w-12" /> : summary?.ptpCount ?? 0}
+                {isLoadingSummary ? <Skeleton className="h-5 w-12" /> : (summary?.ptpCount ?? 0) + (summary?.inTransitCount ?? 0)}
               </div>
-              <div className="text-xs text-muted-foreground mt-1">{isLoadingSummary ? "—" : formatCurrency(summary?.ptpAmount ?? 0)}</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-card">
-            <CardContent className="p-3">
-              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                <FileCheck className="w-3 h-3 text-blue-400" /> In-Transit
-              </div>
-              <div className="text-2xl font-bold font-mono text-blue-400 mt-1">
-                {isLoadingSummary ? <Skeleton className="h-5 w-12" /> : summary?.inTransitCount ?? 0}
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">{isLoadingSummary ? "—" : formatCurrency(summary?.inTransitAmount ?? 0)}</div>
+              <div className="text-xs text-muted-foreground mt-1">{isLoadingSummary ? "—" : formatCurrency((summary?.ptpAmount ?? 0) + (summary?.inTransitAmount ?? 0))}</div>
             </CardContent>
           </Card>
         </div>
