@@ -156,7 +156,7 @@ export default function CustomerDetail() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
         <div className="lg:col-span-2">
           <Card className="bg-card">
             <CardHeader className="pb-2"><CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Active Invoice Ledger</CardTitle></CardHeader>
@@ -228,10 +228,10 @@ export default function CustomerDetail() {
           </Card>
         </div>
 
-        <div className="lg:col-span-1">
-          <Card className="bg-card">
+        <div className="lg:col-span-1 flex">
+          <Card className="bg-card flex flex-col w-full">
             <CardHeader className="pb-2"><CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Communications &amp; Notes</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 flex flex-col flex-1 min-h-0">
               <div className="space-y-2 border-b border-border pb-4">
                 <select
                   value={noteInvoice}
@@ -264,7 +264,7 @@ export default function CustomerDetail() {
                   New Note
                 </button>
               </div>
-              <div className="space-y-3 max-h-[900px] overflow-y-auto">
+              <div className="space-y-3 flex-1 min-h-0 overflow-y-auto">
                 {customerComments.length === 0 ? (
                   <p className="text-sm text-muted-foreground">No notes yet.</p>
                 ) : (
