@@ -98,6 +98,33 @@ export default function CustomerDetail() {
     }
   }
 
+  const [remOpen, setRemOpen] = useState(false);
+  const [remInvoice, setRemInvoice] = useState("");
+  const [remDate, setRemDate] = useState("");
+  const [remNote, setRemNote] = useState("");
+  const [savingRem, setSavingRem] = useState(false);
+  async function saveReminder() {
+    if (!remDate) { alert("Pick a reminder date."); return; }
+    setSavingRem(true);
+    try {
+      const { error } = await supabase.from("reminders").insert({
+        customer_id: String(customerId),
+        customer_name: customerName,
+        invoice_number: remInvoice || null,
+        remind_date: remDate,
+        note: remNote.trim() || null,
+        author: getAuditName() || null,
+      });
+      if (error) { alert("Could not save reminder: " + error.message); return; }
+      setRemDate(""); setRemNote(""); setRemInvoice(""); setRemOpen(false);
+      await qc.invalidateQueries({ queryKey: ["reminders"] });
+      alert("Reminder set.");
+    } catch (e: any) {
+      alert("Could not save reminder: " + (e?.message || e));
+    } finally {
+      setSavingRem(false);
+    }
+  }
   async function addNote() {
     if (!noteText.trim() || !noteInvoice) return;
     const inv = rawInvoices.find((i: any) => String(i.invoiceNumber) === noteInvoice);
@@ -297,6 +324,32 @@ export default function CustomerDetail() {
           <Card className="bg-card flex flex-col w-full">
             <CardHeader className="pb-2"><CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Communications &amp; Notes</CardTitle></CardHeader>
             <CardContent className="space-y-4 flex flex-col flex-1 min-h-0">
+              <div className="border-b border-border pb-3">
+                <button onClick={() => setRemOpen(!remOpen)} className="text-xs text-primary hover:underline">
+                  {remOpen ? "− Cancel reminder" : "+ Set reminder"}
+                </button>
+                {remOpen && (
+                  <div className="mt-2 space-y-2 rounded border border-border bg-background/50 p-2">
+                    <div className="text-xs text-muted-foreground">Follow-up reminder</div>
+                    <input type="date" min="2020-01-01" max="2035-12-31" value={remDate}
+                      onChange={(e) => setRemDate(e.target.value)} disabled={savingRem}
+                      className="w-full bg-background border border-border rounded px-2 py-1 text-xs cursor-pointer"
+                      style={{ colorScheme: "dark" }} />
+                    <select value={remInvoice} onChange={(e) => setRemInvoice(e.target.value)}
+                      className="w-full bg-background border border-border rounded px-2 py-1 text-xs">
+                      <option value="">(optional) tag an invoice…</option>
+                      {rawInvoices.map((i: any) => (<option key={i.id} value={String(i.invoiceNumber)}>{i.invoiceNumber}</option>))}
+                    </select>
+                    <textarea value={remNote} onChange={(e) => setRemNote(e.target.value)} rows={2}
+                      placeholder="(optional) what to follow up on…"
+                      className="w-full bg-background border border-border rounded px-2 py-1 text-xs resize-none" />
+                    <button onClick={saveReminder} disabled={savingRem || !remDate}
+                      className="w-full px-2 py-1 text-xs rounded bg-primary text-primary-foreground disabled:opacity-50">
+                      {savingRem ? "Saving…" : "Save reminder"}
+                    </button>
+                  </div>
+                )}
+              </div>
               <div className="space-y-2 border-b border-border pb-4">
                 <select
                   value={noteInvoice}
