@@ -77,10 +77,12 @@ export default function CustomerDetail() {
 
   const [savingEpd, setSavingEpd] = useState(false);
   const [epdInvoice, setEpdInvoice] = useState("");
-  async function saveExpectedDate(newVal: string) {
+  const [epdDate, setEpdDate] = useState("");
+  async function saveExpectedDate() {
     if (!epdInvoice) { alert("Pick an invoice first."); return; }
     const inv = rawInvoices.find((i: any) => String(i.invoiceNumber) === epdInvoice);
     if (!inv) return;
+    const newVal = epdDate;
     setSavingEpd(true);
     const prev = inv.expectedIsOverride ? inv.expectedPaymentDate : "";
     const { error } = await supabase.from("invoices").update({ expected_payment_date: newVal || null }).eq("id", inv.id);
@@ -191,25 +193,26 @@ export default function CustomerDetail() {
           <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
             <div className="flex-1">
               <label className="text-xs text-muted-foreground">Invoice</label>
-              <select value={epdInvoice} onChange={(e) => setEpdInvoice(e.target.value)} className="w-full bg-background border border-border rounded px-2 py-1 text-sm mt-1">
+              <select value={epdInvoice} onChange={(e) => { setEpdInvoice(e.target.value); const iv = rawInvoices.find((x: any) => String(x.invoiceNumber) === e.target.value); setEpdDate(iv?.expectedPaymentDate ?? ""); }} className="w-full bg-background border border-border rounded px-2 py-1 text-sm mt-1">
                 <option value="">Select invoice…</option>
                 {rawInvoices.map((i: any) => (<option key={i.id} value={String(i.invoiceNumber)}>{i.invoiceNumber}</option>))}
               </select>
             </div>
-            {epdInvoice && (() => {
-              const inv = rawInvoices.find((i: any) => String(i.invoiceNumber) === epdInvoice);
-              const cur = inv?.expectedPaymentDate ?? "";
-              const isOv = !!inv?.expectedIsOverride;
-              return (
-                <div className="flex-1">
-                  <label className="text-xs text-muted-foreground">Date {isOv ? "(set)" : "(auto: due + 7)"}</label>
-                  <input type="date" min="2020-01-01" max="2035-12-31" defaultValue={cur} key={epdInvoice}
-                    onChange={(e) => saveExpectedDate(e.target.value)} disabled={savingEpd}
-                    className="w-full bg-background border border-border rounded px-2 py-1 text-sm mt-1 cursor-pointer"
-                    style={{ colorScheme: "dark" }} />
-                </div>
-              );
-            })()}
+            {epdInvoice && (
+              <div className="flex-1">
+                <label className="text-xs text-muted-foreground">Date</label>
+                <input type="date" min="2020-01-01" max="2035-12-31" value={epdDate}
+                  onChange={(e) => setEpdDate(e.target.value)} disabled={savingEpd}
+                  className="w-full bg-background border border-border rounded px-2 py-1 text-sm mt-1 cursor-pointer"
+                  style={{ colorScheme: "dark" }} />
+              </div>
+            )}
+            {epdInvoice && (
+              <button onClick={saveExpectedDate} disabled={savingEpd || !epdDate}
+                className="px-3 py-1 text-sm rounded bg-primary text-primary-foreground disabled:opacity-50 h-[34px]">
+                {savingEpd ? "Saving…" : "Save"}
+              </button>
+            )}
           </div>
         </CardContent>
       </Card>
