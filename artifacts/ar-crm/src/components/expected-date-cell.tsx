@@ -3,7 +3,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { logAudit } from "@/lib/audit";
 
-// ISO (yyyy-mm-dd) -> mm/dd/yyyy for display
 function fmtUS(iso: string): string {
   if (!iso) return "—";
   const [y, m, d] = iso.split("-");
@@ -39,11 +38,8 @@ export function ExpectedDateCell({ invoice, editable = true }: { invoice: any; e
 
   if (!editable) {
     return (
-      <span
-        className="text-sm"
-        style={{ color: isOverride ? undefined : "#8A97A8" }}
-        title={isOverride ? "Set by analyst" : "Auto: due date + 7 days"}
-      >
+      <span className="text-sm" style={{ color: isOverride ? undefined : "#8A97A8" }}
+        title={isOverride ? "Set by analyst" : "Auto: due date + 7 days"}>
         {fmtUS(value)}
       </span>
     );
@@ -56,8 +52,8 @@ export function ExpectedDateCell({ invoice, editable = true }: { invoice: any; e
       disabled={saving}
       onClick={(e) => e.stopPropagation()}
       onChange={(e) => save(e.target.value)}
-      className="w-full bg-background border border-border rounded px-2 py-1 text-sm"
-      style={{ color: isOverride ? undefined : "#8A97A8" }}
+      className="w-full bg-background border border-border rounded px-2 py-1 text-sm cursor-pointer"
+      style={{ colorScheme: "dark", minWidth: "130px", color: isOverride ? undefined : "#8A97A8" }}
       title={isOverride ? "Set by analyst" : "Auto: due date + 7 days — pick a date to override"}
     />
   );

@@ -12,6 +12,7 @@ import { useListInvoices } from "@/lib/supabase-hooks";
 import { StatusCell } from "@/components/status-cell";
 import { ActualStageCell } from "@/components/actual-stage-cell";
 import { CommentHistoryCell } from "@/components/comment-history-cell";
+import { ExpectedDateCell } from "@/components/expected-date-cell";
 import { ColumnFilter } from "@/components/column-filter";
 
 export default function CustomerDetail() {
@@ -99,6 +100,7 @@ export default function CustomerDetail() {
     { key: "invoiceNumber", label: "Invoice #", get: (i) => i.invoiceNumber },
     { key: "issueDate", label: "Invoice Date", get: (i) => formatDate(i.issueDate) },
     { key: "dueDate", label: "Due Date", get: (i) => formatDate(i.dueDate) },
+    { key: "expectedPaymentDate", label: "Expected Payment Date", get: (i) => i.expectedPaymentDate },
     { key: "daysAged", label: "Days Aged", get: (i) => i.daysAged, sortable: true },
     { key: "amount", label: "Total Open (USD)", get: (i) => i.amount, sortable: true },
     { key: "category", label: "Category", get: (i) => i.category },
@@ -208,14 +210,14 @@ export default function CustomerDetail() {
                   {isLoading ? (
                     Array.from({ length: 6 }).map((_, i) => (
                       <TableRow key={i}>
-                        {Array.from({ length: 10 }).map((_, j) => (
+                        {Array.from({ length: 11 }).map((_, j) => (
                           <TableCell key={j} className="p-2"><Skeleton className="h-4 w-full" /></TableCell>
                         ))}
                       </TableRow>
                     ))
                   ) : sortedInvoices.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={10} className="text-center py-10 text-muted-foreground">No invoices for this customer.</TableCell>
+                      <TableCell colSpan={11} className="text-center py-10 text-muted-foreground">No invoices for this customer.</TableCell>
                     </TableRow>
                   ) : (
                     sortedInvoices.map((invoice: any) => (
@@ -223,6 +225,7 @@ export default function CustomerDetail() {
                         <TableCell className="text-sm p-2 break-words">{invoice.invoiceNumber}</TableCell>
                         <TableCell className="text-sm p-2 break-words">{formatDate(invoice.issueDate)}</TableCell>
                         <TableCell className="text-sm p-2 break-words">{formatDate(invoice.dueDate)}</TableCell>
+                        <TableCell className="text-sm p-2 break-words">{<ExpectedDateCell invoice={invoice} />}</TableCell>
                         <TableCell className="text-sm p-2 break-words">{invoice.daysAged ?? "—"}</TableCell>
                         <TableCell className="text-sm p-2 break-words">{formatCurrency(invoice.amount, "USD")}</TableCell>
                         <TableCell className="text-sm p-2 break-words">{invoice.category ?? "—"}</TableCell>
