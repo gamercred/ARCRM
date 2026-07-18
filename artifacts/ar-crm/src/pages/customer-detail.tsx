@@ -75,6 +75,23 @@ export default function CustomerDetail() {
   const [noteText, setNoteText] = useState("");
   const [savingNote, setSavingNote] = useState(false);
 
+  const [savingEpd, setSavingEpd] = useState(false);
+  async function saveExpectedDate(newVal: string) {
+    if (!noteInvoice) { alert("Pick an invoice first."); return; }
+    const inv = rawInvoices.find((i: any) => String(i.invoiceNumber) === noteInvoice);
+    if (!inv) return;
+    setSavingEpd(true);
+    const prev = inv.expectedIsOverride ? inv.expectedPaymentDate : "";
+    const { error } = await supabase.from("invoices").update({ expected_payment_date: newVal || null }).eq("id", inv.id);
+    if (!error) {
+      await logAudit(inv, "expected_payment_date", prev, newVal);
+      qc.invalidateQueries({ queryKey: ["invoices"] });
+    } else {
+      alert("Could not save: " + error.message);
+    }
+    setSavingEpd(false);
+  }
+
   async function addNote() {
     if (!noteText.trim() || !noteInvoice) return;
     const inv = rawInvoices.find((i: any) => String(i.invoiceNumber) === noteInvoice);
@@ -225,7 +242,7 @@ export default function CustomerDetail() {
                         <TableCell className="text-sm p-2 break-words">{invoice.invoiceNumber}</TableCell>
                         <TableCell className="text-sm p-2 break-words">{formatDate(invoice.issueDate)}</TableCell>
                         <TableCell className="text-sm p-2 break-words">{formatDate(invoice.dueDate)}</TableCell>
-                        <TableCell className="text-sm p-2 break-words">{<ExpectedDateCell invoice={invoice} />}</TableCell>
+                        <TableCell className="text-sm p-2 break-words">{<ExpectedDateCell invoice={invoice} editable={false} />}</TableCell>
                         <TableCell className="text-sm p-2 break-words">{invoice.daysAged ?? "—"}</TableCell>
                         <TableCell className="text-sm p-2 break-words">{formatCurrency(invoice.amount, "USD")}</TableCell>
                         <TableCell className="text-sm p-2 break-words">{invoice.category ?? "—"}</TableCell>
@@ -263,6 +280,20 @@ export default function CustomerDetail() {
                   onChange={(e) => setNoteDate(e.target.value)}
                   className="w-full bg-background border border-border rounded px-2 py-1 text-xs"
                 />
+                {noteInvoice && (() => {
+                  const inv = rawInvoices.find((i: any) => String(i.invoiceNumber) === noteInvoice);
+                  const cur = inv?.expectedPaymentDate ?? "";
+                  const isOv = !!inv?.expectedIsOverride;
+                  return (
+                    <div className="rounded border border-border bg-background/50 px-2 py-2 space-y-1">
+                      <div className="text-xs text-muted-foreground">Expected Payment Date {isOv ? "(set)" : "(auto: due + 7)"}</div>
+                      <input type="date" min="2020-01-01" max="2035-12-31" defaultValue={cur}
+                        onChange={(e) => saveExpectedDate(e.target.value)} disabled={savingEpd}
+                        className="w-full bg-background border border-border rounded px-2 py-1 text-xs cursor-pointer"
+                        style={{ colorScheme: "dark" }} />
+                    </div>
+                  );
+                })()}
                 <textarea
                   value={noteText}
                   onChange={(e) => setNoteText(e.target.value)}
