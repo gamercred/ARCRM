@@ -59,6 +59,8 @@ function formatInvoice(row: any, analystMap: Map<number, string>, today: Date) {
     currency: row.currency,
     issueDate: row.issue_date,
     dueDate: row.due_date,
+    expectedPaymentDate: row.expected_payment_date ?? (() => { const d = new Date(row.due_date); d.setDate(d.getDate() + 7); return d.toISOString().slice(0, 10); })(),
+    expectedIsOverride: row.expected_payment_date != null,
     status,
     overdueDays,
     invoiceStage: row.invoice_stage ?? computeStage(Math.floor((today.getTime() - new Date(row.due_date).getTime()) / 86400000)),

@@ -17,6 +17,14 @@ import { ColumnFilter } from "@/components/column-filter";
 export default function CustomerDetail() {
   const [, params] = useRoute("/customer/:id");
   const customerId = params?.id ?? "";
+  const { data: apContact } = useQuery({
+    queryKey: ["customer-contact", customerId],
+    queryFn: async () => {
+      const { data } = await supabase.from("customer_contacts").select("email").eq("customer_id", String(customerId)).maybeSingle();
+      return data?.email ?? null;
+    },
+    enabled: !!customerId,
+  });
   const qc = useQueryClient();
   const [colFilters, setColFilters] = useState<Record<string, string>>({});
   const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" } | null>(null);
@@ -138,6 +146,9 @@ export default function CustomerDetail() {
             <span className="text-sm text-muted-foreground">ID: {String(customerId)}</span>
             <span className={"text-xs px-2 py-0.5 rounded font-medium " + risk.cls}>{risk.label} (auto)</span>
           </div>
+          {apContact && (
+            <div className="text-sm text-muted-foreground mt-1">AP Contact: <a href={"mailto:" + apContact} className="text-primary hover:underline">{apContact}</a></div>
+          )}
         </div>
       </div>
 

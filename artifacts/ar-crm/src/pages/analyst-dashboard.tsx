@@ -8,6 +8,7 @@ import { ArrowLeft } from "lucide-react";
 import { useListInvoices, useListAnalysts } from "@/lib/supabase-hooks";
 import { StatusCell } from "@/components/status-cell";
 import { ActualStageCell } from "@/components/actual-stage-cell";
+import { ExpectedDateCell } from "@/components/expected-date-cell";
 import { CommentHistoryCell } from "@/components/comment-history-cell";
 import { ColumnFilter } from "@/components/column-filter";
 
@@ -34,6 +35,7 @@ export default function AnalystDashboard() {
     { key: "invoiceNumber", label: "Invoice #", get: (i) => i.invoiceNumber },
     { key: "issueDate", label: "Invoice Date", get: (i) => formatDate(i.issueDate) },
     { key: "dueDate", label: "Due Date", get: (i) => formatDate(i.dueDate) },
+    { key: "expectedPaymentDate", label: "Expected Payment Date", get: (i) => i.expectedPaymentDate },
     { key: "daysAged", label: "Days Aged", get: (i) => i.daysAged, sortable: true },
     { key: "amount", label: "Total Open (USD)", get: (i) => i.amount, sortable: true },
     { key: "category", label: "Category", get: (i) => i.category },
@@ -149,7 +151,7 @@ export default function AnalystDashboard() {
                 ))
               ) : sortedInvoices.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={12} className="text-center py-10 text-muted-foreground">No invoices in portfolio.</TableCell>
+                  <TableCell colSpan={13} className="text-center py-10 text-muted-foreground">No invoices in portfolio.</TableCell>
                 </TableRow>
               ) : (
                 sortedInvoices.map((invoice: any) => (
@@ -159,6 +161,7 @@ export default function AnalystDashboard() {
                     <TableCell className="text-sm p-2 break-words">{invoice.invoiceNumber}</TableCell>
                     <TableCell className="text-sm p-2 break-words">{formatDate(invoice.issueDate)}</TableCell>
                     <TableCell className="text-sm p-2 break-words">{formatDate(invoice.dueDate)}</TableCell>
+                    <TableCell className="text-sm p-2 break-words">{<ExpectedDateCell invoice={invoice} />}</TableCell>
                     <TableCell className="text-sm p-2 break-words">{invoice.daysAged ?? "—"}</TableCell>
                     <TableCell className="text-sm p-2 break-words">{formatCurrency(invoice.amount, "USD")}</TableCell>
                     <TableCell className="text-sm p-2 break-words">{invoice.category ?? "—"}</TableCell>
