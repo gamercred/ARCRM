@@ -9,6 +9,7 @@ import AnalystDashboard from "@/pages/analyst-dashboard";
 import Mailbox from "@/pages/mailbox";
 import AgingReport from "@/pages/aging-report";
 import Customers from "@/pages/customers";
+import MyTasks from "@/pages/my-tasks";
 import CustomerDetail from "@/pages/customer-detail";
 import NotFound from "@/pages/not-found";
 
@@ -23,6 +24,7 @@ function Router() {
         <Route path="/analysts" component={Analysts} />
         <Route path="/analyst/:id" component={AnalystDashboard} />
         <Route path="/customers" component={Customers} />
+        <Route path="/my-tasks" component={MyTasks} />
         <Route path="/customer/:id" component={CustomerDetail} />
         <Route path="/mailbox" component={Mailbox} />
         <Route component={NotFound} />
