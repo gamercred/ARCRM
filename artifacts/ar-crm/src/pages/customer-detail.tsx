@@ -90,6 +90,7 @@ export default function CustomerDetail() {
       if (error) { alert("Could not save: " + error.message); return; }
       try { await logAudit(inv, "expected_payment_date", prev, newVal); } catch (e) { console.warn("audit log failed", e); }
       await qc.invalidateQueries({ queryKey: ["invoices"] });
+      await qc.invalidateQueries({ queryKey: ["all-invoices"] });
     } catch (e: any) {
       alert("Could not save: " + (e?.message || e));
     } finally {

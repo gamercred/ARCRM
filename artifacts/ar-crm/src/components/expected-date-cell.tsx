@@ -28,6 +28,7 @@ export function ExpectedDateCell({ invoice, editable = true }: { invoice: any; e
       await logAudit(invoice, "expected_payment_date", prev, newVal);
       setIsOverride(!!newVal);
       qc.invalidateQueries({ queryKey: ["invoices"] });
+      qc.invalidateQueries({ queryKey: ["all-invoices"] });
     }
     setSaving(false);
     if (error) {
