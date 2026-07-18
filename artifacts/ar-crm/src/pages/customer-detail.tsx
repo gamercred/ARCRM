@@ -129,6 +129,7 @@ export default function CustomerDetail() {
     { key: "invoiceStage", label: "Invoice Stage", get: (i) => i.invoiceStage },
     { key: "actualInvoiceStage", label: "Actual Invoice Stage", get: (i) => i.actualInvoiceStage },
     { key: "manualStatus", label: "Status", get: (i) => i.manualStatus },
+    { key: "comments", label: "Comments", get: (i) => i.comments },
   ];
 
   const distinctVals: Record<string, string[]> = {};
@@ -261,14 +262,14 @@ export default function CustomerDetail() {
                   {isLoading ? (
                     Array.from({ length: 6 }).map((_, i) => (
                       <TableRow key={i}>
-                        {Array.from({ length: 9 }).map((_, j) => (
+                        {Array.from({ length: 10 }).map((_, j) => (
                           <TableCell key={j} className="p-2"><Skeleton className="h-4 w-full" /></TableCell>
                         ))}
                       </TableRow>
                     ))
                   ) : sortedInvoices.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center py-10 text-muted-foreground">No invoices for this customer.</TableCell>
+                      <TableCell colSpan={10} className="text-center py-10 text-muted-foreground">No invoices for this customer.</TableCell>
                     </TableRow>
                   ) : (
                     sortedInvoices.map((invoice: any) => (
@@ -282,6 +283,7 @@ export default function CustomerDetail() {
                         <TableCell className="text-sm p-2 break-words">{invoice.invoiceStage || "—"}</TableCell>
                         <TableCell className="text-sm p-2 break-words">{<ActualStageCell invoice={invoice} editable={false} />}</TableCell>
                         <TableCell className="text-sm p-2 break-words">{<StatusCell invoice={invoice} editable={false} />}</TableCell>
+                        <TableCell className="text-sm p-2 break-words">{<CommentHistoryCell invoice={invoice} editable={false} />}</TableCell>
                       </TableRow>
                     ))
                   )}
