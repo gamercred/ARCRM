@@ -3,6 +3,10 @@ import { Link } from "wouter";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useAllInvoices } from "@/lib/supabase-hooks";
 
+const WEEK_MS = 7 * 86400000;
+const MIN_WEEKS = 8;
+const MAX_WEEKS = 16;
+
 function fmtCur(n: number): string {
   return "$" + n.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
@@ -24,13 +28,17 @@ function fmtRange(start: Date): string {
   return `${start.getDate()} ${m(start)} – ${end.getDate()} ${m(end)}`;
 }
 
+// Fixed forecast anchor: week of 12 Jul 2026 (Sunday)
+const ANCHOR = weekStart(new Date("2026-07-12T00:00:00")).getTime();
+
 export function CashProjection() {
   const { data: invoices, isLoading } = useAllInvoices();
   const [openWeek, setOpenWeek] = useState<number | null>(null);
 
   const { weeks, maxTotal, grand } = useMemo(() => {
-    const map = new Map<number, { start: Date; total: number; count: number; items: any[] }>();
+    const map = new Map<number, { total: number; count: number; items: any[] }>();
     let grand = 0;
+    let lastKey = ANCHOR + (MIN_WEEKS - 1) * WEEK_MS; // ensure at least MIN_WEEKS
     (Array.isArray(invoices) ? invoices : []).forEach((inv: any) => {
       const iso = inv.expectedPaymentDate;
       if (!iso) return;
@@ -38,19 +46,24 @@ export function CashProjection() {
       if (open <= 0) return;
       const d = new Date(iso + "T00:00:00");
       if (isNaN(d.getTime())) return;
-      const ws = weekStart(d);
-      const key = ws.getTime();
-      if (!map.has(key)) map.set(key, { start: ws, total: 0, count: 0, items: [] });
+      let key = weekStart(d).getTime();
+      if (key < ANCHOR) key = ANCHOR; // fold earlier/overdue into first week
+      const idx = Math.round((key - ANCHOR) / WEEK_MS);
+      if (idx > MAX_WEEKS - 1) return; // beyond horizon, ignore
+      if (!map.has(key)) map.set(key, { total: 0, count: 0, items: [] });
       const b = map.get(key)!;
       b.total += open;
       b.count += 1;
       b.items.push({ ...inv, open });
       grand += open;
+      if (key > lastKey) lastKey = key;
     });
-    const weeks = Array.from(map.values())
-      .sort((a, b) => a.start.getTime() - b.start.getTime())
-      .slice(0, 12);
-    weeks.forEach((w) => w.items.sort((a, b) => (a.expectedPaymentDate < b.expectedPaymentDate ? -1 : 1)));
+    const weeks: { start: Date; total: number; count: number; items: any[] }[] = [];
+    for (let t = ANCHOR; t <= lastKey; t += WEEK_MS) {
+      const b = map.get(t) || { total: 0, count: 0, items: [] };
+      b.items.sort((a: any, z: any) => (a.expectedPaymentDate < z.expectedPaymentDate ? -1 : 1));
+      weeks.push({ start: new Date(t), ...b });
+    }
     const maxTotal = weeks.reduce((m, w) => Math.max(m, w.total), 0);
     return { weeks, maxTotal, grand };
   }, [invoices]);
@@ -61,13 +74,11 @@ export function CashProjection() {
         <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
           Projected Cash Inflow — Weekly
         </CardTitle>
-        <span className="text-xs text-muted-foreground">Next 12 weeks · {fmtCur(grand)} expected</span>
+        <span className="text-xs text-muted-foreground">From 12 Jul 2026 · {fmtCur(grand)} expected</span>
       </CardHeader>
       <CardContent>
         {isLoading ? (
           <p className="text-sm text-muted-foreground py-6 text-center">Loading…</p>
-        ) : weeks.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-6 text-center">No expected payment dates yet.</p>
         ) : (
           <div className="space-y-2">
             {weeks.map((w) => {
@@ -76,19 +87,19 @@ export function CashProjection() {
               return (
                 <div key={key} className="rounded">
                   <div
-                    onClick={() => setOpenWeek(isOpen ? null : key)}
-                    className={"flex items-center gap-3 cursor-pointer rounded px-1 py-0.5 transition " + (isOpen ? "bg-muted/40" : "hover:bg-muted/30")}
+                    onClick={() => w.count > 0 && setOpenWeek(isOpen ? null : key)}
+                    className={"flex items-center gap-3 rounded px-1 py-0.5 transition " + (w.count > 0 ? "cursor-pointer " : "opacity-60 ") + (isOpen ? "bg-muted/40" : w.count > 0 ? "hover:bg-muted/30" : "")}
                   >
-                    <div className="w-4 shrink-0 text-xs text-muted-foreground">{isOpen ? "▾" : "▸"}</div>
+                    <div className="w-4 shrink-0 text-xs text-muted-foreground">{w.count > 0 ? (isOpen ? "▾" : "▸") : ""}</div>
                     <div className="w-32 shrink-0 text-xs text-muted-foreground">{fmtRange(w.start)}</div>
                     <div className="flex-1 bg-muted/30 rounded h-6 relative overflow-hidden">
-                      <div className="h-full bg-primary/70 rounded" style={{ width: maxTotal ? `${Math.max(4, (w.total / maxTotal) * 100)}%` : "0%" }} />
+                      <div className="h-full bg-primary/70 rounded" style={{ width: maxTotal ? `${w.total > 0 ? Math.max(4, (w.total / maxTotal) * 100) : 0}%` : "0%" }} />
                     </div>
                     <div className="w-28 shrink-0 text-right text-sm font-mono">{fmtCur(w.total)}</div>
                     <div className="w-14 shrink-0 text-right text-xs text-muted-foreground">{w.count} inv</div>
                   </div>
 
-                  {isOpen && (
+                  {isOpen && w.items.length > 0 && (
                     <div className="ml-7 mt-1 mb-2 border-l border-border pl-3 space-y-1">
                       <div className="grid grid-cols-12 gap-2 text-[10px] uppercase tracking-wider text-muted-foreground pb-1">
                         <div className="col-span-4">Customer</div>
