@@ -85,14 +85,16 @@ export default function CustomerDetail() {
     const newVal = epdDate;
     setSavingEpd(true);
     const prev = inv.expectedIsOverride ? inv.expectedPaymentDate : "";
-    const { error } = await supabase.from("invoices").update({ expected_payment_date: newVal || null }).eq("id", inv.id);
-    if (!error) {
-      await logAudit(inv, "expected_payment_date", prev, newVal);
-      qc.invalidateQueries({ queryKey: ["invoices"] });
-    } else {
-      alert("Could not save: " + error.message);
+    try {
+      const { error } = await supabase.from("invoices").update({ expected_payment_date: newVal || null }).eq("id", inv.id);
+      if (error) { alert("Could not save: " + error.message); return; }
+      try { await logAudit(inv, "expected_payment_date", prev, newVal); } catch (e) { console.warn("audit log failed", e); }
+      await qc.invalidateQueries({ queryKey: ["invoices"] });
+    } catch (e: any) {
+      alert("Could not save: " + (e?.message || e));
+    } finally {
+      setSavingEpd(false);
     }
-    setSavingEpd(false);
   }
 
   async function addNote() {
