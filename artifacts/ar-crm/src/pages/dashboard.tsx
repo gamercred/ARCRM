@@ -6,6 +6,7 @@ import { StatusCell } from "@/components/status-cell";
 import { ColumnFilter } from "@/components/column-filter";
 import { ActualStageCell } from "@/components/actual-stage-cell";
 import { useGetDashboardSummary, useGetDashboardAging, useListInvoices, ListInvoicesStatus, useListAnalysts } from "@/lib/supabase-hooks";
+import { CashProjection } from "@/components/cash-projection";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -216,6 +217,8 @@ export default function Dashboard() {
           </div>
         </CardContent>
       </Card>
+
+<CashProjection />
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 items-center bg-card p-3 rounded-lg border border-border">

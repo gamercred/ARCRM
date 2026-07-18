@@ -179,6 +179,18 @@ export function useGetDashboardAging() {
   });
 }
 
+export function useAllInvoices() {
+  return useQuery({
+    queryKey: ["all-invoices"],
+    queryFn: async () => {
+      const [invoices, analysts] = await Promise.all([fetchAllInvoices(), fetchAllAnalysts()]);
+      const analystMap = new Map<number, string>(analysts.map((a: any) => [a.id, a.name]));
+      const today = new Date();
+      return invoices.map((inv: any) => formatInvoice(inv, analystMap, today));
+    },
+  });
+}
+
 export function useListInvoices(params: {
   status?: string; analystId?: number; search?: string;
   customerId?: string; disputed?: boolean; page?: number; pageSize?: number;
