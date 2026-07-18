@@ -76,9 +76,10 @@ export default function CustomerDetail() {
   const [savingNote, setSavingNote] = useState(false);
 
   const [savingEpd, setSavingEpd] = useState(false);
+  const [epdInvoice, setEpdInvoice] = useState("");
   async function saveExpectedDate(newVal: string) {
-    if (!noteInvoice) { alert("Pick an invoice first."); return; }
-    const inv = rawInvoices.find((i: any) => String(i.invoiceNumber) === noteInvoice);
+    if (!epdInvoice) { alert("Pick an invoice first."); return; }
+    const inv = rawInvoices.find((i: any) => String(i.invoiceNumber) === epdInvoice);
     if (!inv) return;
     setSavingEpd(true);
     const prev = inv.expectedIsOverride ? inv.expectedPaymentDate : "";
@@ -117,14 +118,12 @@ export default function CustomerDetail() {
     { key: "invoiceNumber", label: "Invoice #", get: (i) => i.invoiceNumber },
     { key: "issueDate", label: "Invoice Date", get: (i) => formatDate(i.issueDate) },
     { key: "dueDate", label: "Due Date", get: (i) => formatDate(i.dueDate) },
-    { key: "expectedPaymentDate", label: "Expected Payment Date", get: (i) => i.expectedPaymentDate },
     { key: "daysAged", label: "Days Aged", get: (i) => i.daysAged, sortable: true },
     { key: "amount", label: "Total Open (USD)", get: (i) => i.amount, sortable: true },
     { key: "category", label: "Category", get: (i) => i.category },
     { key: "invoiceStage", label: "Invoice Stage", get: (i) => i.invoiceStage },
     { key: "actualInvoiceStage", label: "Actual Invoice Stage", get: (i) => i.actualInvoiceStage },
     { key: "manualStatus", label: "Status", get: (i) => i.manualStatus },
-    { key: "comments", label: "Comments", get: (i) => i.comments },
   ];
 
   const distinctVals: Record<string, string[]> = {};
@@ -186,6 +185,35 @@ export default function CustomerDetail() {
         </Card>
       </div>
 
+      <Card className="bg-card">
+        <CardHeader className="pb-2"><CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Expected Payment Date</CardTitle></CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
+            <div className="flex-1">
+              <label className="text-xs text-muted-foreground">Invoice</label>
+              <select value={epdInvoice} onChange={(e) => setEpdInvoice(e.target.value)} className="w-full bg-background border border-border rounded px-2 py-1 text-sm mt-1">
+                <option value="">Select invoice…</option>
+                {rawInvoices.map((i: any) => (<option key={i.id} value={String(i.invoiceNumber)}>{i.invoiceNumber}</option>))}
+              </select>
+            </div>
+            {epdInvoice && (() => {
+              const inv = rawInvoices.find((i: any) => String(i.invoiceNumber) === epdInvoice);
+              const cur = inv?.expectedPaymentDate ?? "";
+              const isOv = !!inv?.expectedIsOverride;
+              return (
+                <div className="flex-1">
+                  <label className="text-xs text-muted-foreground">Date {isOv ? "(set)" : "(auto: due + 7)"}</label>
+                  <input type="date" min="2020-01-01" max="2035-12-31" defaultValue={cur} key={epdInvoice}
+                    onChange={(e) => saveExpectedDate(e.target.value)} disabled={savingEpd}
+                    className="w-full bg-background border border-border rounded px-2 py-1 text-sm mt-1 cursor-pointer"
+                    style={{ colorScheme: "dark" }} />
+                </div>
+              );
+            })()}
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
         <div className="lg:col-span-2">
           <Card className="bg-card">
@@ -227,14 +255,14 @@ export default function CustomerDetail() {
                   {isLoading ? (
                     Array.from({ length: 6 }).map((_, i) => (
                       <TableRow key={i}>
-                        {Array.from({ length: 11 }).map((_, j) => (
+                        {Array.from({ length: 9 }).map((_, j) => (
                           <TableCell key={j} className="p-2"><Skeleton className="h-4 w-full" /></TableCell>
                         ))}
                       </TableRow>
                     ))
                   ) : sortedInvoices.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={11} className="text-center py-10 text-muted-foreground">No invoices for this customer.</TableCell>
+                      <TableCell colSpan={9} className="text-center py-10 text-muted-foreground">No invoices for this customer.</TableCell>
                     </TableRow>
                   ) : (
                     sortedInvoices.map((invoice: any) => (
@@ -242,14 +270,12 @@ export default function CustomerDetail() {
                         <TableCell className="text-sm p-2 break-words">{invoice.invoiceNumber}</TableCell>
                         <TableCell className="text-sm p-2 break-words">{formatDate(invoice.issueDate)}</TableCell>
                         <TableCell className="text-sm p-2 break-words">{formatDate(invoice.dueDate)}</TableCell>
-                        <TableCell className="text-sm p-2 break-words">{<ExpectedDateCell invoice={invoice} editable={false} />}</TableCell>
                         <TableCell className="text-sm p-2 break-words">{invoice.daysAged ?? "—"}</TableCell>
                         <TableCell className="text-sm p-2 break-words">{formatCurrency(invoice.amount, "USD")}</TableCell>
                         <TableCell className="text-sm p-2 break-words">{invoice.category ?? "—"}</TableCell>
                         <TableCell className="text-sm p-2 break-words">{invoice.invoiceStage || "—"}</TableCell>
                         <TableCell className="text-sm p-2 break-words">{<ActualStageCell invoice={invoice} editable={false} />}</TableCell>
                         <TableCell className="text-sm p-2 break-words">{<StatusCell invoice={invoice} editable={false} />}</TableCell>
-                        <TableCell className="text-sm p-2 break-words">{<CommentHistoryCell invoice={invoice} editable={false} />}</TableCell>
                       </TableRow>
                     ))
                   )}
@@ -280,20 +306,6 @@ export default function CustomerDetail() {
                   onChange={(e) => setNoteDate(e.target.value)}
                   className="w-full bg-background border border-border rounded px-2 py-1 text-xs"
                 />
-                {noteInvoice && (() => {
-                  const inv = rawInvoices.find((i: any) => String(i.invoiceNumber) === noteInvoice);
-                  const cur = inv?.expectedPaymentDate ?? "";
-                  const isOv = !!inv?.expectedIsOverride;
-                  return (
-                    <div className="rounded border border-border bg-background/50 px-2 py-2 space-y-1">
-                      <div className="text-xs text-muted-foreground">Expected Payment Date {isOv ? "(set)" : "(auto: due + 7)"}</div>
-                      <input type="date" min="2020-01-01" max="2035-12-31" defaultValue={cur}
-                        onChange={(e) => saveExpectedDate(e.target.value)} disabled={savingEpd}
-                        className="w-full bg-background border border-border rounded px-2 py-1 text-xs cursor-pointer"
-                        style={{ colorScheme: "dark" }} />
-                    </div>
-                  );
-                })()}
                 <textarea
                   value={noteText}
                   onChange={(e) => setNoteText(e.target.value)}
