@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -13,6 +13,11 @@ function fmtWhen(ts: string): string {
 export default function Mailbox() {
   const qc = useQueryClient();
   const [openThread, setOpenThread] = useState<number | null>(null);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const t = params.get("thread");
+    if (t) setOpenThread(Number(t));
+  }, []);
   const [refreshing, setRefreshing] = useState(false);
   const [replyBody, setReplyBody] = useState("");
   const [replyCc, setReplyCc] = useState("");
