@@ -99,6 +99,7 @@ export default function CustomerDetail() {
   }
 
   const [emailTo, setEmailTo] = useState("");
+  const [emailCc, setEmailCc] = useState("");
   const [emailSubject, setEmailSubject] = useState("");
   const [emailBody, setEmailBody] = useState("");
   const [pickedInvoices, setPickedInvoices] = useState<Record<string, boolean>>({});
@@ -119,14 +120,14 @@ export default function CustomerDetail() {
     if (!toAddr || !emailSubject.trim() || !emailBody.trim()) { setEmailStatus("Fill in To, Subject and Message first."); return; }
     setSendingEmail(true); setEmailStatus(null);
     try {
-      const res = await fetch("/api/send-email", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ to: toAddr, subject: emailSubject.trim(), body: emailBody.trim() }) });
+      const res = await fetch("/api/send-email", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ to: toAddr, cc: emailCc.trim() || undefined, subject: emailSubject.trim(), body: emailBody.trim() }) });
       const data = await res.json();
       if (!res.ok || !data.ok) { setEmailStatus("Send failed: " + (data.error || res.status)); return; }
       const { data: thread } = await supabase.from("email_threads").insert({ customer_id: String(customerId), customer_name: customerName, subject: emailSubject.trim(), last_message_at: new Date().toISOString() }).select().single();
       if (thread) {
-        await supabase.from("email_messages").insert({ thread_id: thread.id, direction: "outbound", from_email: "me", to_email: toAddr, subject: emailSubject.trim(), body: emailBody.trim(), gmail_message_id: data.id, gmail_thread_id: data.threadId, sent_at: new Date().toISOString() });
+        await supabase.from("email_messages").insert({ thread_id: thread.id, direction: "outbound", from_email: "me", to_email: toAddr, cc: emailCc.trim() || null, subject: emailSubject.trim(), body: emailBody.trim(), gmail_message_id: data.id, gmail_thread_id: data.threadId, sent_at: new Date().toISOString() });
       }
-      setEmailStatus("Sent ✓"); setEmailBody(""); setEmailSubject(""); setPickedInvoices({});
+      setEmailStatus("Sent ✓"); setEmailBody(""); setEmailSubject(""); setEmailCc(""); setPickedInvoices({});
       qc.invalidateQueries({ queryKey: ["email-threads"] });
     } catch (e: any) { setEmailStatus("Send failed: " + (e?.message || e)); } finally { setSendingEmail(false); }
   }
@@ -299,6 +300,11 @@ export default function CustomerDetail() {
           <div>
             <label className="text-xs text-muted-foreground">To</label>
             <input value={emailTo || apContact || ""} onChange={(e) => setEmailTo(e.target.value)} placeholder="customer@example.com"
+              className="w-full bg-background border border-border rounded px-2 py-1 text-sm mt-1" />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground">Cc</label>
+            <input value={emailCc} onChange={(e) => setEmailCc(e.target.value)} placeholder="Cc (comma-separated, optional)"
               className="w-full bg-background border border-border rounded px-2 py-1 text-sm mt-1" />
           </div>
           <div>

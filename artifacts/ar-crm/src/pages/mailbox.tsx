@@ -14,6 +14,7 @@ export default function Mailbox() {
   const [openThread, setOpenThread] = useState<number | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [replyBody, setReplyBody] = useState("");
+  const [replyCc, setReplyCc] = useState("");
   const [sendingReply, setSendingReply] = useState(false);
   const [replyMsg, setReplyMsg] = useState<string | null>(null);
   const [refreshMsg, setRefreshMsg] = useState<string | null>(null);
@@ -63,12 +64,12 @@ export default function Mailbox() {
     const subject = thread?.subject ? (thread.subject.startsWith("Re:") ? thread.subject : "Re: " + thread.subject) : "Re:";
     setSendingReply(true); setReplyMsg(null);
     try {
-      const res = await fetch("/api/send-email", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ to: toAddr, subject, body: replyBody.trim() }) });
+      const res = await fetch("/api/send-email", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ to: toAddr, cc: replyCc.trim() || undefined, subject, body: replyBody.trim() }) });
       const data = await res.json();
       if (!res.ok || !data.ok) { setReplyMsg("Send failed: " + (data.error || res.status)); return; }
-      await supabase.from("email_messages").insert({ thread_id: openThread, direction: "outbound", from_email: "me", to_email: toAddr, subject, body: replyBody.trim(), gmail_message_id: data.id, gmail_thread_id: data.threadId, sent_at: new Date().toISOString() });
+      await supabase.from("email_messages").insert({ thread_id: openThread, direction: "outbound", from_email: "me", to_email: toAddr, cc: replyCc.trim() || null, subject, body: replyBody.trim(), gmail_message_id: data.id, gmail_thread_id: data.threadId, sent_at: new Date().toISOString() });
       await supabase.from("email_threads").update({ last_message_at: new Date().toISOString() }).eq("id", openThread);
-      setReplyBody(""); setReplyMsg("Sent ✓");
+      setReplyBody(""); setReplyCc(""); setReplyMsg("Sent ✓");
       qc.invalidateQueries({ queryKey: ["email-messages", openThread] });
       qc.invalidateQueries({ queryKey: ["email-threads"] });
     } catch (e: any) { setReplyMsg("Send failed: " + (e?.message || e)); } finally { setSendingReply(false); }
@@ -142,6 +143,8 @@ export default function Mailbox() {
             {openThread !== null && (
               <div className="mt-4 border-t border-border pt-3 space-y-2">
                 <label className="text-xs text-muted-foreground">Reply</label>
+                <input value={replyCc} onChange={(e) => setReplyCc(e.target.value)} placeholder="Cc (comma-separated, optional)"
+                  className="w-full bg-background border border-border rounded px-2 py-1 text-sm mb-2" />
                 <textarea value={replyBody} onChange={(e) => setReplyBody(e.target.value)} rows={4}
                   placeholder="Type your reply…"
                   className="w-full bg-background border border-border rounded px-2 py-1 text-sm resize-none" />
