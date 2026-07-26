@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
+import { EmailChips } from "@/components/email-chips";
 
 function fmtWhen(ts: string): string {
   if (!ts) return "";
@@ -143,8 +144,7 @@ export default function Mailbox() {
             {openThread !== null && (
               <div className="mt-4 border-t border-border pt-3 space-y-2">
                 <label className="text-xs text-muted-foreground">Reply</label>
-                <input value={replyCc} onChange={(e) => setReplyCc(e.target.value)} placeholder="Cc (comma-separated, optional)"
-                  className="w-full bg-background border border-border rounded px-2 py-1 text-sm mb-2" />
+                <div className="mb-2"><EmailChips value={replyCc} onChange={setReplyCc} placeholder="Cc (optional)" /></div>
                 <textarea value={replyBody} onChange={(e) => setReplyBody(e.target.value)} rows={4}
                   placeholder="Type your reply…"
                   className="w-full bg-background border border-border rounded px-2 py-1 text-sm resize-none" />

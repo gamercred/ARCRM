@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { getAuditName } from "@/lib/audit";
+import { EmailChips } from "@/components/email-chips";
 import { useListInvoices } from "@/lib/supabase-hooks";
 import { StatusCell } from "@/components/status-cell";
 import { ActualStageCell } from "@/components/actual-stage-cell";
@@ -355,13 +356,11 @@ export default function CustomerDetail() {
           </div>
           <div>
             <label className="text-xs text-muted-foreground">To</label>
-            <input value={emailTo || apContact || ""} onChange={(e) => setEmailTo(e.target.value)} placeholder="customer@example.com"
-              className="w-full bg-background border border-border rounded px-2 py-1 text-sm mt-1" />
+            <div className="mt-1"><EmailChips value={emailTo || apContact || ""} onChange={setEmailTo} placeholder="Type email, press Enter" /></div>
           </div>
           <div>
             <label className="text-xs text-muted-foreground">Cc</label>
-            <input value={emailCc} onChange={(e) => setEmailCc(e.target.value)} placeholder="Cc (comma-separated, optional)"
-              className="w-full bg-background border border-border rounded px-2 py-1 text-sm mt-1" />
+            <div className="mt-1"><EmailChips value={emailCc} onChange={setEmailCc} placeholder="Cc (optional)" /></div>
           </div>
           <div>
             <label className="text-xs text-muted-foreground">Subject</label>
