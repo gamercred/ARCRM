@@ -13,6 +13,9 @@ export default function Mailbox() {
   const qc = useQueryClient();
   const [openThread, setOpenThread] = useState<number | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [replyBody, setReplyBody] = useState("");
+  const [sendingReply, setSendingReply] = useState(false);
+  const [replyMsg, setReplyMsg] = useState<string | null>(null);
   const [refreshMsg, setRefreshMsg] = useState<string | null>(null);
 
   const { data: threads } = useQuery({
@@ -50,6 +53,26 @@ export default function Mailbox() {
     }
   }
 
+  async function sendReply() {
+    if (openThread === null) return;
+    const thread = (Array.isArray(threads) ? threads : []).find((t: any) => t.id === openThread);
+    const lastInbound = (Array.isArray(messages) ? messages : []).filter((m: any) => m.direction === "inbound").slice(-1)[0];
+    const toAddr = (lastInbound?.from_email || thread?.customer_name || "").trim();
+    if (!toAddr) { setReplyMsg("No recipient found for this thread."); return; }
+    if (!replyBody.trim()) { setReplyMsg("Write a reply first."); return; }
+    const subject = thread?.subject ? (thread.subject.startsWith("Re:") ? thread.subject : "Re: " + thread.subject) : "Re:";
+    setSendingReply(true); setReplyMsg(null);
+    try {
+      const res = await fetch("/api/send-email", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ to: toAddr, subject, body: replyBody.trim() }) });
+      const data = await res.json();
+      if (!res.ok || !data.ok) { setReplyMsg("Send failed: " + (data.error || res.status)); return; }
+      await supabase.from("email_messages").insert({ thread_id: openThread, direction: "outbound", from_email: "me", to_email: toAddr, subject, body: replyBody.trim(), gmail_message_id: data.id, gmail_thread_id: data.threadId, sent_at: new Date().toISOString() });
+      await supabase.from("email_threads").update({ last_message_at: new Date().toISOString() }).eq("id", openThread);
+      setReplyBody(""); setReplyMsg("Sent ✓");
+      qc.invalidateQueries({ queryKey: ["email-messages", openThread] });
+      qc.invalidateQueries({ queryKey: ["email-threads"] });
+    } catch (e: any) { setReplyMsg("Send failed: " + (e?.message || e)); } finally { setSendingReply(false); }
+  }
   const list = Array.isArray(threads) ? threads : [];
   const msgs = Array.isArray(messages) ? messages : [];
 
@@ -114,6 +137,21 @@ export default function Mailbox() {
                     <div className="text-sm whitespace-pre-wrap break-words">{m.body}</div>
                   </div>
                 ))}
+              </div>
+            )}
+            {openThread !== null && (
+              <div className="mt-4 border-t border-border pt-3 space-y-2">
+                <label className="text-xs text-muted-foreground">Reply</label>
+                <textarea value={replyBody} onChange={(e) => setReplyBody(e.target.value)} rows={4}
+                  placeholder="Type your reply…"
+                  className="w-full bg-background border border-border rounded px-2 py-1 text-sm resize-none" />
+                <div className="flex items-center gap-3">
+                  <button onClick={sendReply} disabled={sendingReply}
+                    className="px-4 py-1.5 text-sm rounded bg-primary text-primary-foreground disabled:opacity-50">
+                    {sendingReply ? "Sending…" : "Send reply"}
+                  </button>
+                  {replyMsg && <span className="text-xs text-muted-foreground">{replyMsg}</span>}
+                </div>
               </div>
             )}
           </CardContent>
