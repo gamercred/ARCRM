@@ -115,15 +115,16 @@ export default function CustomerDetail() {
     if (!emailSubject) setEmailSubject(`Payment reminder — ${customerName}`);
   }
   async function sendCustomerEmail() {
-    if (!emailTo.trim() || !emailSubject.trim() || !emailBody.trim()) { setEmailStatus("Fill in To, Subject and Message first."); return; }
+    const toAddr = (emailTo || apContact || "").trim();
+    if (!toAddr || !emailSubject.trim() || !emailBody.trim()) { setEmailStatus("Fill in To, Subject and Message first."); return; }
     setSendingEmail(true); setEmailStatus(null);
     try {
-      const res = await fetch("/api/send-email", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ to: emailTo.trim(), subject: emailSubject.trim(), body: emailBody.trim() }) });
+      const res = await fetch("/api/send-email", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ to: toAddr, subject: emailSubject.trim(), body: emailBody.trim() }) });
       const data = await res.json();
       if (!res.ok || !data.ok) { setEmailStatus("Send failed: " + (data.error || res.status)); return; }
       const { data: thread } = await supabase.from("email_threads").insert({ customer_id: String(customerId), customer_name: customerName, subject: emailSubject.trim(), last_message_at: new Date().toISOString() }).select().single();
       if (thread) {
-        await supabase.from("email_messages").insert({ thread_id: thread.id, direction: "outbound", from_email: "me", to_email: emailTo.trim(), subject: emailSubject.trim(), body: emailBody.trim(), gmail_message_id: data.id, gmail_thread_id: data.threadId, sent_at: new Date().toISOString() });
+        await supabase.from("email_messages").insert({ thread_id: thread.id, direction: "outbound", from_email: "me", to_email: toAddr, subject: emailSubject.trim(), body: emailBody.trim(), gmail_message_id: data.id, gmail_thread_id: data.threadId, sent_at: new Date().toISOString() });
       }
       setEmailStatus("Sent ✓"); setEmailBody(""); setEmailSubject(""); setPickedInvoices({});
       qc.invalidateQueries({ queryKey: ["email-threads"] });
