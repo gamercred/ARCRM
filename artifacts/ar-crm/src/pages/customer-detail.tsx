@@ -98,6 +98,37 @@ export default function CustomerDetail() {
     }
   }
 
+  const [emailTo, setEmailTo] = useState("");
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailBody, setEmailBody] = useState("");
+  const [pickedInvoices, setPickedInvoices] = useState<Record<string, boolean>>({});
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailStatus, setEmailStatus] = useState<string | null>(null);
+  function toggleInv(num: string) {
+    setPickedInvoices((prev) => ({ ...prev, [num]: !prev[num] }));
+  }
+  function buildBody() {
+    const chosen = rawInvoices.filter((i: any) => pickedInvoices[String(i.invoiceNumber)]);
+    const lines = chosen.map((i: any) => `  • Invoice ${i.invoiceNumber} — due ${formatDate(i.dueDate)} — ${formatCurrency(i.amount, "USD")}`);
+    const intro = `Hi,\n\nThis is a friendly reminder regarding the following ${chosen.length > 1 ? "invoices" : "invoice"}:\n\n${lines.join("\n")}\n\nWe would appreciate an update on the expected payment. Please let us know if you need any documents.\n\nThank you,\n${getAuditName()}`;
+    setEmailBody(intro);
+    if (!emailSubject) setEmailSubject(`Payment reminder — ${customerName}`);
+  }
+  async function sendCustomerEmail() {
+    if (!emailTo.trim() || !emailSubject.trim() || !emailBody.trim()) { setEmailStatus("Fill in To, Subject and Message first."); return; }
+    setSendingEmail(true); setEmailStatus(null);
+    try {
+      const res = await fetch("/api/send-email", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ to: emailTo.trim(), subject: emailSubject.trim(), body: emailBody.trim() }) });
+      const data = await res.json();
+      if (!res.ok || !data.ok) { setEmailStatus("Send failed: " + (data.error || res.status)); return; }
+      const { data: thread } = await supabase.from("email_threads").insert({ customer_id: String(customerId), customer_name: customerName, subject: emailSubject.trim(), last_message_at: new Date().toISOString() }).select().single();
+      if (thread) {
+        await supabase.from("email_messages").insert({ thread_id: thread.id, direction: "outbound", from_email: "me", to_email: emailTo.trim(), subject: emailSubject.trim(), body: emailBody.trim(), gmail_message_id: data.id, gmail_thread_id: data.threadId, sent_at: new Date().toISOString() });
+      }
+      setEmailStatus("Sent ✓"); setEmailBody(""); setEmailSubject(""); setPickedInvoices({});
+      qc.invalidateQueries({ queryKey: ["email-threads"] });
+    } catch (e: any) { setEmailStatus("Send failed: " + (e?.message || e)); } finally { setSendingEmail(false); }
+  }
   const [remOpen, setRemOpen] = useState(false);
   const [remInvoice, setRemInvoice] = useState("");
   const [remDate, setRemDate] = useState("");
@@ -248,6 +279,46 @@ export default function CustomerDetail() {
         </CardContent>
       </Card>
 
+      <Card className="bg-card">
+        <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
+          <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Send Email</CardTitle>
+          {apContact && <span className="text-xs text-muted-foreground">AP contact: {apContact}</span>}
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex flex-wrap gap-x-4 gap-y-1">
+            <span className="text-xs text-muted-foreground w-full">Include invoices:</span>
+            {rawInvoices.map((i: any) => (
+              <label key={i.id} className="flex items-center gap-1 text-xs cursor-pointer">
+                <input type="checkbox" checked={!!pickedInvoices[String(i.invoiceNumber)]} onChange={() => toggleInv(String(i.invoiceNumber))} />
+                {i.invoiceNumber} <span className="text-muted-foreground">({formatCurrency(i.amount, "USD")})</span>
+              </label>
+            ))}
+            <button onClick={buildBody} className="text-xs text-primary hover:underline ml-auto">Build email from selected</button>
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground">To</label>
+            <input value={emailTo || apContact || ""} onChange={(e) => setEmailTo(e.target.value)} placeholder="customer@example.com"
+              className="w-full bg-background border border-border rounded px-2 py-1 text-sm mt-1" />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground">Subject</label>
+            <input value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} placeholder="Payment reminder"
+              className="w-full bg-background border border-border rounded px-2 py-1 text-sm mt-1" />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground">Message</label>
+            <textarea value={emailBody} onChange={(e) => setEmailBody(e.target.value)} rows={7} placeholder="Tick invoices then Build email from selected, or write your own"
+              className="w-full bg-background border border-border rounded px-2 py-1 text-sm mt-1 resize-none" />
+          </div>
+          <div className="flex items-center gap-3">
+            <button onClick={() => sendCustomerEmail()} disabled={sendingEmail}
+              className="px-4 py-1.5 text-sm rounded bg-primary text-primary-foreground disabled:opacity-50">
+              {sendingEmail ? "Sending" : "Send email"}
+            </button>
+            {emailStatus && <span className="text-xs text-muted-foreground">{emailStatus}</span>}
+          </div>
+        </CardContent>
+      </Card>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
         <div className="lg:col-span-2">
           <Card className="bg-card">
