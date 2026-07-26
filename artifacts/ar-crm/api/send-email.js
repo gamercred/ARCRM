@@ -1,11 +1,10 @@
-// Vercel serverless function: sends an email as the connected Gmail account.
-// Secrets come from Vercel env vars, never hardcoded.
+// Vercel serverless function: sends an email (with optional CC) as the connected Gmail account.
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { to, subject, body } = req.body || {};
+  const { to, cc, subject, body } = req.body || {};
   if (!to || !subject || !body) {
     return res.status(400).json({ error: "Missing to, subject, or body" });
   }
@@ -18,7 +17,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 1) Exchange refresh token for a short-lived access token
     const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -34,21 +32,20 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "Could not get access token", detail: tokenData });
     }
 
-    // 2) Build a raw RFC 2822 message, base64url-encoded
-    const rawLines = [
-      `To: ${to}`,
-      `Subject: ${subject}`,
-      "Content-Type: text/plain; charset=UTF-8",
-      "",
-      body,
-    ];
-    const raw = Buffer.from(rawLines.join("\r\n"))
+    // build headers; to and cc can be comma-separated lists
+    const headerLines = [`To: ${to}`];
+    if (cc && String(cc).trim()) headerLines.push(`Cc: ${cc}`);
+    headerLines.push(`Subject: ${subject}`);
+    headerLines.push("Content-Type: text/plain; charset=UTF-8");
+    headerLines.push("");
+    headerLines.push(body);
+
+    const raw = Buffer.from(headerLines.join("\r\n"))
       .toString("base64")
       .replace(/\+/g, "-")
       .replace(/\//g, "_")
       .replace(/=+$/, "");
 
-    // 3) Send via Gmail API
     const sendRes = await fetch(
       "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
       {
@@ -70,4 +67,3 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Unexpected error", detail: String(e) });
   }
 }
-// redeploy 1785054144
