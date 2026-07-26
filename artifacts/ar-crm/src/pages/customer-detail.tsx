@@ -18,15 +18,19 @@ import { ColumnFilter } from "@/components/column-filter";
 export default function CustomerDetail() {
   const [, params] = useRoute("/customer/:id");
   const customerId = params?.id ?? "";
-  const { data: apContact } = useQuery({
-    queryKey: ["customer-contact", customerId],
+  const qc = useQueryClient();
+  const { data: contacts } = useQuery({
+    queryKey: ["customer-contacts", customerId],
     queryFn: async () => {
-      const { data } = await supabase.from("customer_contacts").select("email").eq("customer_id", String(customerId)).maybeSingle();
-      return data?.email ?? null;
+      const { data } = await supabase.from("customer_contacts").select("*").eq("customer_id", String(customerId)).order("is_primary", { ascending: false }).order("id", { ascending: true });
+      return data ?? [];
     },
     enabled: !!customerId,
   });
-  const qc = useQueryClient();
+  const contactList = Array.isArray(contacts) ? contacts : [];
+  const primaryContact = contactList.find((c: any) => c.is_primary) || contactList[0];
+  const apContact = primaryContact?.email ?? null;
+
   const [colFilters, setColFilters] = useState<Record<string, string>>({});
   const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" } | null>(null);
 
@@ -98,6 +102,31 @@ export default function CustomerDetail() {
     }
   }
 
+  const [newContactEmail, setNewContactEmail] = useState("");
+  const [newContactName, setNewContactName] = useState("");
+  const [savingContact, setSavingContact] = useState(false);
+  async function addContact() {
+    if (!newContactEmail.trim()) return;
+    setSavingContact(true);
+    try {
+      const isFirst = contactList.length === 0;
+      const { error } = await supabase.from("customer_contacts").insert({ customer_id: String(customerId), email: newContactEmail.trim(), name: newContactName.trim() || null, is_primary: isFirst });
+      if (error) { alert("Could not add: " + error.message); return; }
+      setNewContactEmail(""); setNewContactName("");
+      await qc.invalidateQueries({ queryKey: ["customer-contacts", customerId] });
+    } catch (e: any) { alert("Could not add: " + (e?.message || e)); } finally { setSavingContact(false); }
+  }
+  async function removeContact(id: number) {
+    const { error } = await supabase.from("customer_contacts").delete().eq("id", id);
+    if (error) { alert("Could not remove: " + error.message); return; }
+    await qc.invalidateQueries({ queryKey: ["customer-contacts", customerId] });
+  }
+  async function makePrimary(id: number) {
+    await supabase.from("customer_contacts").update({ is_primary: false }).eq("customer_id", String(customerId));
+    const { error } = await supabase.from("customer_contacts").update({ is_primary: true }).eq("id", id);
+    if (error) { alert("Could not set primary: " + error.message); return; }
+    await qc.invalidateQueries({ queryKey: ["customer-contacts", customerId] });
+  }
   const [emailTo, setEmailTo] = useState("");
   const [emailCc, setEmailCc] = useState("");
   const [emailSubject, setEmailSubject] = useState("");
@@ -230,12 +259,39 @@ export default function CustomerDetail() {
             <span className="text-sm text-muted-foreground">ID: {String(customerId)}</span>
             <span className={"text-xs px-2 py-0.5 rounded font-medium " + risk.cls}>{risk.label} (auto)</span>
           </div>
-          {apContact && (
-            <div className="text-sm text-muted-foreground mt-1">AP Contact: <a href={"mailto:" + apContact} className="text-primary hover:underline">{apContact}</a></div>
-          )}
         </div>
       </div>
 
+      <Card className="bg-card">
+        <CardHeader className="pb-2"><CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">AP Contacts</CardTitle></CardHeader>
+        <CardContent className="space-y-2">
+          {contactList.length === 0 ? (
+            <p className="text-xs text-muted-foreground">No contacts yet. Add one below.</p>
+          ) : (
+            <div className="space-y-1">
+              {contactList.map((c: any) => (
+                <div key={c.id} className="flex items-center gap-2 text-sm">
+                  {c.is_primary && <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/20 text-primary font-medium">PRIMARY</span>}
+                  <a href={"mailto:" + c.email} className="text-primary hover:underline">{c.email}</a>
+                  {c.name && <span className="text-xs text-muted-foreground">({c.name})</span>}
+                  {!c.is_primary && <button onClick={() => makePrimary(c.id)} className="text-xs text-muted-foreground hover:text-primary ml-auto">Make primary</button>}
+                  <button onClick={() => removeContact(c.id)} className={"text-xs text-muted-foreground hover:text-red-400 " + (c.is_primary ? "ml-auto" : "")}>Remove</button>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="flex flex-col sm:flex-row gap-2 pt-1">
+            <input value={newContactEmail} onChange={(e) => setNewContactEmail(e.target.value)} placeholder="email@customer.com"
+              className="flex-1 bg-background border border-border rounded px-2 py-1 text-sm" />
+            <input value={newContactName} onChange={(e) => setNewContactName(e.target.value)} placeholder="Name (optional)"
+              className="flex-1 bg-background border border-border rounded px-2 py-1 text-sm" />
+            <button onClick={addContact} disabled={savingContact || !newContactEmail.trim()}
+              className="px-3 py-1 text-sm rounded bg-primary text-primary-foreground disabled:opacity-50">
+              {savingContact ? "Adding…" : "Add"}
+            </button>
+          </div>
+        </CardContent>
+      </Card>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="bg-card">
           <CardHeader className="pb-1"><CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Outstanding</CardTitle></CardHeader>
