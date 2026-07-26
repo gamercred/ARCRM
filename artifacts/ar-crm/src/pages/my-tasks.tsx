@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
 import { useAllInvoices } from "@/lib/supabase-hooks";
@@ -19,6 +19,7 @@ function hoursLeft(sentAt: string): number {
 
 export default function MyTasks() {
   const qc = useQueryClient();
+  const [, navigate] = useLocation();
 
   const { data: reminders, isLoading } = useQuery({
     queryKey: ["reminders"],
@@ -131,12 +132,12 @@ export default function MyTasks() {
                         </div>
                         <div className="text-[10px] text-muted-foreground mt-0.5">{new Date(m.sent_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</div>
                       </div>
-                      <a href={`/mailbox?thread=${m.thread_id}`} className="flex-1 min-w-0 cursor-pointer hover:opacity-80">
+                      <div onClick={() => navigate(`/mailbox?thread=${m.thread_id}`)} className="flex-1 min-w-0 cursor-pointer hover:opacity-80">
                         <div className="text-sm font-medium truncate">{m.email_threads?.customer_name || m.from_email}</div>
                         <div className="text-xs text-muted-foreground">From: {m.from_email}</div>
                         {m.subject && <div className="text-sm mt-0.5 truncate">{m.subject}</div>}
                         <div className="text-[10px] text-primary hover:underline mt-0.5">Open in mailbox to reply →</div>
-                      </a>
+                      </div>
                       <button onClick={() => markEmailDone(m.id)} className="shrink-0 text-xs px-2 py-1 rounded border border-border hover:bg-muted/40">Mark done</button>
                     </div>
                   );
