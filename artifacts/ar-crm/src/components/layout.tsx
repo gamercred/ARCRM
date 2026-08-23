@@ -5,13 +5,17 @@ import { Button } from "@/components/ui/button";
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
 
-  const navItems = [
-    { href: "/", label: "Dashboard", icon: LayoutDashboard, exact: true },
-    { href: "/receivables", label: "Receivables", icon: FileSpreadsheet, exact: false },
-    { href: "/analysts", label: "Team Overview", icon: Users, exact: false },
-    { href: "/customers", label: "Customers", icon: Users, exact: false },
-    { href: "/my-tasks", label: "My Tasks", icon: Bell, exact: false },
-    { href: "/mailbox", label: "Team Mailbox", icon: Mail, exact: false },
+  const navGroups = [
+    { title: "Overview", items: [
+      { href: "/", label: "Dashboard", icon: LayoutDashboard, exact: true },
+      { href: "/receivables", label: "Receivables", icon: FileSpreadsheet, exact: false },
+    ]},
+    { title: "Collections", items: [
+      { href: "/my-tasks", label: "My Tasks", icon: Bell, exact: false, badge: "3" },
+      { href: "/customers", label: "Customers", icon: Users, exact: false },
+      { href: "/analysts", label: "Team Overview", icon: Users, exact: false },
+      { href: "/mailbox", label: "Team Mailbox", icon: Mail, exact: false },
+    ]},
   ];
 
   return (
@@ -26,23 +30,33 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
         <nav className="p-3 flex-1 overflow-y-auto">
-          <div className="space-y-0.5">
-            {navItems.map((item) => {
-              const isActive = item.exact ? location === item.href : location.startsWith(item.href);
-              const Icon = item.icon;
-              return (
-                <Link key={item.href} href={item.href}>
-                  <div className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
-                    isActive
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                  }`}>
-                    <Icon className="w-4 h-4 shrink-0" />
-                    {item.label}
-                  </div>
-                </Link>
-              );
-            })}
+          <div className="space-y-5">
+            {navGroups.map((group) => (
+              <div key={group.title} className="space-y-1">
+                <div className="px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">{group.title}</div>
+                <div className="space-y-0.5">
+                  {group.items.map((item: any) => {
+                    const isActive = item.exact ? location === item.href : location.startsWith(item.href);
+                    const Icon = item.icon;
+                    return (
+                      <Link key={item.href} href={item.href}>
+                        <div className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+                          isActive
+                            ? "bg-primary/10 text-primary"
+                            : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                        }`}>
+                          <Icon className="w-4 h-4 shrink-0" />
+                          <span className="flex-1">{item.label}</span>
+                          {item.badge && (
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-500 text-white leading-none">{item.badge}</span>
+                          )}
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         </nav>
         <div className="p-3 border-t border-border">
