@@ -145,13 +145,13 @@
 }
 
 /* Custom Status Colors */
-.status-not-due { @apply bg-slate-500/20 text-slate-300 border-slate-500/50; }
-.status-current { @apply bg-green-500/20 text-green-400 border-green-500/50; }
-.status-overdue-1-30 { @apply bg-yellow-500/20 text-yellow-400 border-yellow-500/50; }
-.status-overdue-31-60 { @apply bg-orange-500/20 text-orange-400 border-orange-500/50; }
-.status-overdue-61-90 { @apply bg-red-500/20 text-red-400 border-red-500/50; }
-.status-overdue-90-plus { @apply bg-rose-600/20 text-rose-400 border-rose-600/50; }
-.status-paid { @apply bg-emerald-500/20 text-emerald-400 border-emerald-500/50; }
+.status-not-due { @apply bg-slate-500/15 text-slate-600 border-slate-500/30; }
+.status-current { @apply bg-green-500/15 text-green-700 border-green-500/30; }
+.status-overdue-1-30 { @apply bg-yellow-500/15 text-yellow-700 border-yellow-500/30; }
+.status-overdue-31-60 { @apply bg-orange-500/15 text-orange-700 border-orange-500/30; }
+.status-overdue-61-90 { @apply bg-red-500/15 text-red-700 border-red-500/30; }
+.status-overdue-90-plus { @apply bg-rose-600/15 text-rose-700 border-rose-600/30; }
+.status-paid { @apply bg-emerald-500/15 text-emerald-700 border-emerald-500/30; }
 
 @layer utilities {
   input[type="search"]::-webkit-search-cancel-button { @apply hidden; }

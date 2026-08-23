@@ -55,10 +55,10 @@ export default function CustomerDetail() {
   const maxDaysAged = rawInvoices.reduce((m: number, i: any) => Math.max(m, Number(i.daysAged ?? 0)), 0);
   const risk =
     maxDaysAged > 90
-      ? { label: "High Risk", cls: "bg-red-500/20 text-red-400" }
+      ? { label: "High Risk", cls: "bg-red-500/15 text-red-700" }
       : maxDaysAged > 30
-        ? { label: "Medium Risk", cls: "bg-amber-500/20 text-amber-400" }
-        : { label: "Low Risk", cls: "bg-emerald-500/20 text-emerald-400" };
+        ? { label: "Medium Risk", cls: "bg-amber-500/15 text-amber-700" }
+        : { label: "Low Risk", cls: "bg-emerald-500/15 text-emerald-700" };
 
   const { data: allComments } = useQuery({
     queryKey: ["invoice-comments-all"],
@@ -325,7 +325,7 @@ export default function CustomerDetail() {
                 <input type="date" min="2020-01-01" max="2035-12-31" value={epdDate}
                   onChange={(e) => setEpdDate(e.target.value)} disabled={savingEpd}
                   className="w-full bg-background border border-border rounded px-2 py-1 text-sm mt-1 cursor-pointer"
-                  style={{ colorScheme: "dark" }} />
+                  style={{ colorScheme: "light" }} />
               </div>
             )}
             {epdInvoice && (
@@ -467,7 +467,7 @@ export default function CustomerDetail() {
                     <input type="date" min="2020-01-01" max="2035-12-31" value={remDate}
                       onChange={(e) => setRemDate(e.target.value)} disabled={savingRem}
                       className="w-full bg-background border border-border rounded px-2 py-1 text-xs cursor-pointer"
-                      style={{ colorScheme: "dark" }} />
+                      style={{ colorScheme: "light" }} />
                     <select value={remInvoice} onChange={(e) => setRemInvoice(e.target.value)}
                       className="w-full bg-background border border-border rounded px-2 py-1 text-xs">
                       <option value="">(optional) tag an invoice…</option>

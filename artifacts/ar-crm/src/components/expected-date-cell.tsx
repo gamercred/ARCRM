@@ -39,7 +39,7 @@ export function ExpectedDateCell({ invoice, editable = true }: { invoice: any; e
 
   if (!editable) {
     return (
-      <span className="text-sm" style={{ color: isOverride ? undefined : "#8A97A8" }}
+      <span className="text-sm" style={{ color: isOverride ? undefined : "hsl(var(--muted-foreground))" }}
         title={isOverride ? "Set by analyst" : "Auto: due date + 7 days"}>
         {fmtUS(value)}
       </span>
@@ -54,7 +54,7 @@ export function ExpectedDateCell({ invoice, editable = true }: { invoice: any; e
       onClick={(e) => e.stopPropagation()}
       onChange={(e) => save(e.target.value)}
       className="w-full bg-background border border-border rounded px-2 py-1 text-sm cursor-pointer"
-      style={{ colorScheme: "dark", minWidth: "130px", color: isOverride ? undefined : "#8A97A8" }}
+      style={{ colorScheme: "light", minWidth: "130px", color: isOverride ? undefined : "hsl(var(--muted-foreground))" }}
       title={isOverride ? "Set by analyst" : "Auto: due date + 7 days — pick a date to override"}
     />
   );
