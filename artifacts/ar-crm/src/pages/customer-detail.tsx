@@ -7,7 +7,7 @@ import { formatCurrency, formatDate } from "@/lib/format";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { getAuditName } from "@/lib/audit";
+import { getAuditName, logAudit } from "@/lib/audit";
 import { EmailChips } from "@/components/email-chips";
 import { useListInvoices } from "@/lib/supabase-hooks";
 import { StatusCell } from "@/components/status-cell";

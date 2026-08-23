@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Layout } from "@/components/layout";
 import Dashboard from "@/pages/dashboard";
+import Receivables from "@/pages/receivables";
 import Analysts from "@/pages/analysts";
 import AnalystDashboard from "@/pages/analyst-dashboard";
 import Mailbox from "@/pages/mailbox";
@@ -20,6 +21,7 @@ function Router() {
     <Layout>
       <Switch>
         <Route path="/" component={Dashboard} />
+        <Route path="/receivables" component={Receivables} />
         <Route path="/aging-report" component={AgingReport} />
         <Route path="/analysts" component={Analysts} />
         <Route path="/analyst/:id" component={AnalystDashboard} />

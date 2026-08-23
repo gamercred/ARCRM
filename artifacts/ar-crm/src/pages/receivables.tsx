@@ -38,7 +38,7 @@ function KpiCard({ label, value, sub, color, icon: Icon }: {
   );
 }
 
-export default function Dashboard() {
+export default function Receivables() {
   const { data: summary, isLoading: isLoadingSummary } = useGetDashboardSummary();
   const { data: aging, isLoading: isLoadingAging } = useGetDashboardAging();
 
@@ -125,7 +125,7 @@ export default function Dashboard() {
   return (
     <div className="p-6 space-y-6 w-full">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">AR Dashboard</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Receivables</h1>
         <div className="flex items-center gap-3">
           <AnalystPicker />
           <ImportArButton />
@@ -135,90 +135,127 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* KPI Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard
-          label="Total Outstanding"
-          value={isLoadingSummary ? <Skeleton className="h-7 w-28" /> : formatCurrency(summary?.totalOutstanding ?? 0)}
-          sub={`${summary?.totalInvoices ?? 0} open invoices`}
-          color="text-primary"
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-3 items-center bg-card p-3 rounded-lg border border-border">
+        <Input
+          placeholder="Search invoices or customers..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="flex-1 bg-background"
         />
-        <KpiCard
-          label="Overdue AR"
-          value={isLoadingSummary ? <Skeleton className="h-7 w-28" /> : formatCurrency(summary?.overdueAmount ?? 0)}
-          sub={`${summary?.overdueCount ?? 0} invoices past due`}
-          color="text-destructive"
-          icon={TrendingDown}
-        />
-        <KpiCard
-          label="DSO"
-          value={isLoadingSummary ? <Skeleton className="h-7 w-16" /> : `${summary?.dso ?? 0} days`}
-          sub="Days Sales Outstanding"
-          color={summary && summary.dso > 45 ? "text-orange-400" : "text-emerald-400"}
-          icon={Clock}
-        />
-        <div className="grid grid-cols-2 gap-2 col-span-2 lg:col-span-1">
-          <Card onClick={() => setCapsuleFilter(capsuleFilter === "disputed" ? null : "disputed")} className={"bg-card cursor-pointer transition " + (capsuleFilter === "disputed" ? "ring-2 ring-amber-400" : "hover:bg-muted/40")}>
-            <CardContent className="p-3">
-              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                <AlertTriangle className="w-3 h-3 text-amber-400" /> Disputed
-              </div>
-              <div className="text-2xl font-bold font-mono text-amber-400 mt-1">
-                {isLoadingSummary ? <Skeleton className="h-5 w-12" /> : summary?.disputedCount ?? 0}
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">{isLoadingSummary ? "—" : formatCurrency(summary?.disputedAmount ?? 0)}</div>
-            </CardContent>
-          </Card>
-          <Card onClick={() => setCapsuleFilter(capsuleFilter === "ptp" ? null : "ptp")} className={"bg-card cursor-pointer transition " + (capsuleFilter === "ptp" ? "ring-2 ring-cyan-400" : "hover:bg-muted/40")}>
-            <CardContent className="p-3">
-              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                <FileCheck className="w-3 h-3 text-cyan-400" /> PTP / In-Transit
-              </div>
-              <div className="text-2xl font-bold font-mono text-cyan-400 mt-1">
-                {isLoadingSummary ? <Skeleton className="h-5 w-12" /> : (summary?.ptpCount ?? 0) + (summary?.inTransitCount ?? 0)}
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">{isLoadingSummary ? "—" : formatCurrency((summary?.ptpAmount ?? 0) + (summary?.inTransitAmount ?? 0))}</div>
-            </CardContent>
-          </Card>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Select value={status} onValueChange={(v) => setStatus(v as any)}>
+            <SelectTrigger className="w-[150px] bg-background">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="not_due">Not Due</SelectItem>
+              <SelectItem value="current">Current</SelectItem>
+              <SelectItem value="overdue_1_30">1–30 Days</SelectItem>
+              <SelectItem value="overdue_31_60">31–60 Days</SelectItem>
+              <SelectItem value="overdue_61_90">61–90 Days</SelectItem>
+              <SelectItem value="overdue_90_plus">90+ Days</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={analystId} onValueChange={setAnalystId}>
+            <SelectTrigger className="w-[160px] bg-background">
+              <SelectValue placeholder="Analyst" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Analysts</SelectItem>
+              {analysts?.map((a) => (
+                <SelectItem key={a.id} value={String(a.id)}>{a.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {(search || status !== "all" || analystId !== "all") && (
+            <button
+              className="text-xs text-muted-foreground hover:text-foreground"
+              onClick={() => { setSearch(""); setStatus("all"); setAnalystId("all"); }}
+            >
+              Clear
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Aging Breakdown */}
-      <Card className="bg-card">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">AR Aging Breakdown</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {agingBuckets.map((bucket) => {
-              const pct = totalAr > 0 && bucket.data ? Math.round((bucket.data.amount / totalAr) * 100) : 0;
-              return (
-                <div key={bucket.label} className="space-y-2">
-                  <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{bucket.label}</div>
-                  {isLoadingAging ? (
-                    <Skeleton className="h-5 w-20" />
-                  ) : (
-                    <>
-                      <div className={cn("text-base font-bold font-mono", bucket.color)}>
-                        {formatCurrency(bucket.data?.amount ?? 0)}
-                      </div>
-                      <div className="w-full bg-muted rounded-full h-1.5">
-                        <div className={cn("h-1.5 rounded-full transition-all", bucket.bar)} style={{ width: `${pct}%` }} />
-                      </div>
-                      <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                        <span>{bucket.data?.count ?? 0} inv</span>
-                        <span>{pct}%</span>
-                      </div>
-                    </>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
+      {/* Invoice Table */}
+      <div className="w-full">
+        <Table className="table-fixed w-full text-sm">
+          <TableHeader>
+            <TableRow className="hover:bg-transparent border-b-border bg-muted/30">
+              {COLS.map((c) => (
+                <TableHead key={c.key} className="text-sm font-semibold p-2">
+                  <div className="flex items-center gap-1">
+                    <ColumnFilter
+                      label={c.label}
+                      values={distinctVals[c.key] || []}
+                      value={colFilters[c.key] || ""}
+                      onChange={(v) => setColFilters((prev) => ({ ...prev, [c.key]: v }))}
+                    />
+                    {(c.key === "daysAged" || c.key === "amount") && (
+                      <button
+                        onClick={() =>
+                          setSort((prev) =>
+                            prev && prev.key === c.key
+                              ? { key: c.key, dir: prev.dir === "asc" ? "desc" : "asc" }
+                              : { key: c.key, dir: "asc" },
+                          )
+                        }
+                        className="p-0.5 rounded hover:bg-muted text-muted-foreground"
+                        title="Sort"
+                      >
+                        {sort && sort.key === c.key ? (sort.dir === "asc" ? "▲" : "▼") : "↕"}
+                      </button>
+                    )}
+                  </div>
+                </TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoadingInvoices ? (
+              Array.from({ length: 8 }).map((_, i) => (
+                <TableRow key={i}>
+                  {Array.from({ length: 14 }).map((_, j) => (
+                    <TableCell key={j} className="p-2"><Skeleton className="h-4 w-full" /></TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : filteredInvoices.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={14} className="text-center py-10 text-muted-foreground">No invoices found.</TableCell>
+              </TableRow>
+            ) : (
+              sortedInvoices.map((invoice: any) => (
+                <TableRow key={invoice.id} className="hover:bg-muted/40 transition-colors align-top">
+                  <TableCell className="text-sm p-2 break-words">{invoice.customerId}</TableCell>
+                  <TableCell className="text-sm p-2 break-words"><Link href={`/customer/${invoice.customerId}`} className="text-primary hover:underline">{invoice.customerName}</Link></TableCell>
+                  <TableCell className="text-sm p-2 break-words">{invoice.invoiceNumber}</TableCell>
+                  <TableCell className="text-sm p-2 break-words">{formatDate(invoice.issueDate)}</TableCell>
+                  <TableCell className="text-sm p-2 break-words">{formatDate(invoice.dueDate)}</TableCell>
+                  <TableCell className="text-sm p-2 break-words">{invoice.txnCurrency ?? "—"}</TableCell>
+                  <TableCell className="text-sm p-2 break-words">{invoice.txnAmount != null ? invoice.txnAmount.toLocaleString() : "—"}</TableCell>
+                  <TableCell className="text-sm p-2 break-words">{invoice.daysAged ?? "—"}</TableCell>
+                  <TableCell className="text-sm p-2 break-words">{formatCurrency(invoice.amount, "USD")}</TableCell>
+                  <TableCell className="text-sm p-2 break-words">{invoice.analystName ?? "—"}</TableCell>
+                  <TableCell className="text-sm p-2 break-words">{invoice.category ?? "—"}</TableCell>
+                  <TableCell className="text-sm p-2 break-words">{invoice.invoiceStage || "—"}</TableCell>
+                  <TableCell className="text-sm p-2 break-words">{<ActualStageCell invoice={invoice} editable={false} />}</TableCell>
+                  <TableCell className="text-sm p-2 break-words">{<StatusCell invoice={invoice} editable={false} />}</TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
 
-<CashProjection />
+      {invoicesData && (
+        <div className="text-xs text-muted-foreground text-right">
+          Showing {filteredInvoices.length} of {invoicesData.total} invoices
+        </div>
+      )}
 
     </div>
   );
