@@ -67,34 +67,34 @@
 
 :root {
   /* Bloomberg terminal meets modern SaaS. Ink/navy base with electric blue accents */
-  --background: 224 71% 4%;
-  --foreground: 210 40% 98%;
-  --border: 216 34% 17%;
-  --input: 216 34% 17%;
-  --ring: 224 76% 48%;
+  --background: 220 20% 97%;
+  --foreground: 222 30% 16%;
+  --border: 220 16% 90%;
+  --input: 220 16% 90%;
+  --ring: 227 68% 55%;
 
-  --card: 224 71% 6%;
-  --card-foreground: 210 40% 98%;
-  --card-border: 216 34% 17%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 30% 16%;
+  --card-border: 220 16% 90%;
 
-  --popover: 224 71% 6%;
-  --popover-foreground: 210 40% 98%;
-  --popover-border: 216 34% 17%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 30% 16%;
+  --popover-border: 220 16% 90%;
 
-  --primary: 224 76% 48%;
-  --primary-foreground: 210 40% 98%;
+  --primary: 227 68% 55%;
+  --primary-foreground: 0 0% 100%;
 
-  --secondary: 216 34% 17%;
-  --secondary-foreground: 210 40% 98%;
+  --secondary: 220 16% 94%;
+  --secondary-foreground: 222 30% 16%;
 
-  --muted: 216 34% 17%;
-  --muted-foreground: 215 20.2% 65.1%;
+  --muted: 220 16% 94%;
+  --muted-foreground: 220 10% 46%;
 
-  --accent: 216 34% 17%;
-  --accent-foreground: 210 40% 98%;
+  --accent: 220 16% 94%;
+  --accent-foreground: 222 30% 16%;
 
-  --destructive: 0 84% 60%;
-  --destructive-foreground: 210 40% 98%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
 
   --chart-1: 224 76% 48%;
   --chart-2: 160 84% 39%;
@@ -102,24 +102,24 @@
   --chart-4: 0 84% 60%;
   --chart-5: 280 65% 60%;
 
-  --sidebar: 224 71% 4%;
-  --sidebar-foreground: 210 40% 98%;
-  --sidebar-border: 216 34% 17%;
-  --sidebar-primary: 224 76% 48%;
-  --sidebar-primary-foreground: 210 40% 98%;
-  --sidebar-accent: 216 34% 17%;
-  --sidebar-accent-foreground: 210 40% 98%;
-  --sidebar-ring: 224 76% 48%;
+  --sidebar: 222 30% 12%;
+  --sidebar-foreground: 210 20% 90%;
+  --sidebar-border: 222 20% 22%;
+  --sidebar-primary: 227 68% 55%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 222 24% 20%;
+  --sidebar-accent-foreground: 210 20% 90%;
+  --sidebar-ring: 227 68% 55%;
 
   --app-font-sans: 'Inter', sans-serif;
   --app-font-mono: 'JetBrains Mono', monospace;
   --radius: 0.25rem;
 
-  --button-outline: rgba(255,255,255, .10);
-  --badge-outline: rgba(255,255,255, .05);
+  --button-outline: rgba(0,0,0, .10);
+  --badge-outline: rgba(0,0,0, .05);
   --opaque-button-border-intensity: 9;
-  --elevate-1: rgba(255,255,255, .04);
-  --elevate-2: rgba(255,255,255, .09);
+  --elevate-1: rgba(0,0,0, .04);
+  --elevate-2: rgba(0,0,0, .08);
   
   --sidebar-primary-border: hsl(from hsl(var(--sidebar-primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
   --sidebar-accent-border: hsl(from hsl(var(--sidebar-accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
