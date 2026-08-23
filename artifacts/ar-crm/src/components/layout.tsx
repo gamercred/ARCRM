@@ -20,9 +20,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      <aside className="w-56 border-r border-border bg-card flex flex-col hidden md:flex shrink-0">
-        <div className="h-14 flex items-center px-5 border-b border-border">
-          <div className="flex items-center gap-2 text-primary font-bold tracking-tight">
+      <aside className="w-56 border-r border-sidebar-border bg-sidebar text-sidebar-foreground flex flex-col hidden md:flex shrink-0">
+        <div className="h-14 flex items-center px-5 border-b border-sidebar-border">
+          <div className="flex items-center gap-2 text-sidebar-foreground font-bold tracking-tight">
             <div className="w-6 h-6 bg-primary rounded flex items-center justify-center shrink-0">
               <span className="text-primary-foreground text-[10px] font-bold leading-none">AR</span>
             </div>
@@ -33,7 +33,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <div className="space-y-5">
             {navGroups.map((group) => (
               <div key={group.title} className="space-y-1">
-                <div className="px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">{group.title}</div>
+                <div className="px-3 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/45">{group.title}</div>
                 <div className="space-y-0.5">
                   {group.items.map((item: any) => {
                     const isActive = item.exact ? location === item.href : location.startsWith(item.href);
@@ -42,8 +42,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       <Link key={item.href} href={item.href}>
                         <div className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
                           isActive
-                            ? "bg-primary/10 text-primary"
-                            : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                            ? "bg-sidebar-accent text-white"
+                            : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-white"
                         }`}>
                           <Icon className="w-4 h-4 shrink-0" />
                           <span className="flex-1">{item.label}</span>
@@ -59,8 +59,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
             ))}
           </div>
         </nav>
-        <div className="p-3 border-t border-border">
-          <div className="text-[10px] text-muted-foreground/50 text-center">CollectBase MVP</div>
+        <div className="p-3 border-t border-sidebar-border">
+          <div className="text-[10px] text-sidebar-foreground/40 text-center">CollectBase MVP</div>
         </div>
       </aside>
 
