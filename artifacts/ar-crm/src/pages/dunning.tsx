@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
@@ -18,6 +19,7 @@ function channelStyle(ch: string) {
 }
 
 export default function Dunning() {
+  const [openTpl, setOpenTpl] = useState<any>(null);
   const qc = useQueryClient();
 
   const { data: seq } = useQuery({
@@ -117,7 +119,7 @@ export default function Dunning() {
             <CardHeader className="pb-2"><CardTitle className="text-sm font-semibold">Templates</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               {tplList.map((t: any) => (
-                <div key={t.id} className="flex items-center justify-between">
+                <div key={t.id} onClick={() => setOpenTpl(t)} className={"flex items-center justify-between cursor-pointer rounded px-2 -mx-2 py-1 hover:bg-muted/40 " + (openTpl?.id === t.id ? "bg-muted/40" : "")}>
                   <div>
                     <div className="text-sm font-medium">{t.name}</div>
                     <div className="text-xs text-muted-foreground">Used {t.used_count?.toLocaleString?.() ?? t.used_count}×</div>
@@ -127,6 +129,17 @@ export default function Dunning() {
             </CardContent>
           </Card>
 
+          {openTpl && (
+            <Card className="bg-card">
+              <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
+                <CardTitle className="text-sm font-semibold">{openTpl.name}</CardTitle>
+                <button onClick={() => setOpenTpl(null)} className="text-xs text-muted-foreground hover:text-foreground">Close</button>
+              </CardHeader>
+              <CardContent>
+                <pre className="text-xs whitespace-pre-wrap break-words font-sans text-foreground/90 max-h-96 overflow-y-auto">{openTpl.body || "(no body)"}</pre>
+              </CardContent>
+            </Card>
+          )}
           <Card className="bg-card">
             <CardHeader className="pb-2"><CardTitle className="text-sm font-semibold">Sent this week</CardTitle></CardHeader>
             <CardContent className="space-y-2">
