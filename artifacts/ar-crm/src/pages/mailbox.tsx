@@ -21,6 +21,8 @@ export default function Mailbox() {
   const [refreshing, setRefreshing] = useState(false);
   const [replyBody, setReplyBody] = useState("");
   const [replyCc, setReplyCc] = useState("");
+  const [replyTo, setReplyTo] = useState("");
+  const [replySubject, setReplySubject] = useState("");
   const [sendingReply, setSendingReply] = useState(false);
   const [replyMsg, setReplyMsg] = useState<string | null>(null);
   const [refreshMsg, setRefreshMsg] = useState<string | null>(null);
@@ -44,6 +46,24 @@ export default function Mailbox() {
     },
   });
 
+  useEffect(() => {
+    // prefill reply fields when thread/messages change
+    const thread = (Array.isArray(threads) ? threads : []).find((t) => t.id === openThread);
+    const msgs = Array.isArray(messages) ? messages : [];
+    const lastIn = msgs.filter((m) => m.direction === "inbound").slice(-1)[0];
+    if (openThread !== null) {
+      setReplyTo((lastIn?.from_email || thread?.customer_name || "").trim());
+      const subj = thread?.subject ? (thread.subject.startsWith("Re:") ? thread.subject : "Re: " + thread.subject) : "Re:";
+      setReplySubject(subj);
+    }
+  }, [openThread, messages, threads]);
+
+  useEffect(() => {
+    // auto-refresh inbound every 60s
+    const id = setInterval(() => { refreshInbox(); }, 60000);
+    return () => clearInterval(id);
+  }, []);
+
   async function refreshInbox() {
     setRefreshing(true);
     setRefreshMsg(null);
@@ -64,10 +84,10 @@ export default function Mailbox() {
     if (openThread === null) return;
     const thread = (Array.isArray(threads) ? threads : []).find((t: any) => t.id === openThread);
     const lastInbound = (Array.isArray(messages) ? messages : []).filter((m: any) => m.direction === "inbound").slice(-1)[0];
-    const toAddr = (lastInbound?.from_email || thread?.customer_name || "").trim();
+    const toAddr = (replyTo || lastInbound?.from_email || thread?.customer_name || "").trim();
     if (!toAddr) { setReplyMsg("No recipient found for this thread."); return; }
     if (!replyBody.trim()) { setReplyMsg("Write a reply first."); return; }
-    const subject = thread?.subject ? (thread.subject.startsWith("Re:") ? thread.subject : "Re: " + thread.subject) : "Re:";
+    const subject = (replySubject || "Re:").trim();
     setSendingReply(true); setReplyMsg(null);
     try {
       const res = await fetch("/api/send-email", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ to: toAddr, cc: replyCc.trim() || undefined, subject, body: replyBody.trim() }) });
@@ -75,6 +95,8 @@ export default function Mailbox() {
       if (!res.ok || !data.ok) { setReplyMsg("Send failed: " + (data.error || res.status)); return; }
       await supabase.from("email_messages").insert({ thread_id: openThread, direction: "outbound", from_email: "me", to_email: toAddr, cc: replyCc.trim() || null, subject, body: replyBody.trim(), gmail_message_id: data.id, gmail_thread_id: data.threadId, sent_at: new Date().toISOString() });
       await supabase.from("email_threads").update({ last_message_at: new Date().toISOString() }).eq("id", openThread);
+      await supabase.from("email_messages").update({ task_done: true }).eq("thread_id", openThread).eq("direction", "inbound");
+      qc.invalidateQueries({ queryKey: ["inbound-tasks"] });
       setReplyBody(""); setReplyCc(""); setReplyMsg("Sent ✓");
       qc.invalidateQueries({ queryKey: ["email-messages", openThread] });
       qc.invalidateQueries({ queryKey: ["email-threads"] });
@@ -138,6 +160,7 @@ export default function Mailbox() {
                   <div key={m.id} className={"rounded border p-3 " + (m.direction === "inbound" ? "border-border bg-muted/20" : "border-primary/40 bg-primary/5 ml-8")}>
                     <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
                       <span>{m.direction === "inbound" ? "From: " + m.from_email : "You → " + m.to_email}</span>
+                      {m.cc && <span className="text-muted-foreground">Cc: {m.cc}</span>}
                       <span>{fmtWhen(m.sent_at)}</span>
                     </div>
                     {m.subject && <div className="text-sm font-medium mb-1">{m.subject}</div>}
@@ -149,6 +172,10 @@ export default function Mailbox() {
             {openThread !== null && (
               <div className="mt-4 border-t border-border pt-3 space-y-2">
                 <label className="text-xs text-muted-foreground">Reply</label>
+                <input value={replyTo} onChange={(e) => setReplyTo(e.target.value)} placeholder="To"
+                  className="w-full bg-background border border-border rounded px-2 py-1 text-sm mb-2" />
+                <input value={replySubject} onChange={(e) => setReplySubject(e.target.value)} placeholder="Subject"
+                  className="w-full bg-background border border-border rounded px-2 py-1 text-sm mb-2" />
                 <div className="mb-2"><EmailChips value={replyCc} onChange={setReplyCc} placeholder="Cc (optional)" /></div>
                 <textarea value={replyBody} onChange={(e) => setReplyBody(e.target.value)} rows={4}
                   placeholder="Type your reply…"
