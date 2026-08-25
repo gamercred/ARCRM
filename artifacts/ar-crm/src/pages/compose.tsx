@@ -11,6 +11,7 @@ export default function Compose() {
   const qc = useQueryClient();
   const { data: invoices } = useAllInvoices();
   const [customerId, setCustomerId] = useState("");
+  const [custSearch, setCustSearch] = useState("");
   const [to, setTo] = useState("");
   const [cc, setCc] = useState("");
   const [subject, setSubject] = useState("");
@@ -42,6 +43,7 @@ export default function Compose() {
 
   function onPickCustomer(id: string) {
     setCustomerId(id);
+    setCustSearch("");
     setPicked({});
     setBody(""); setSubject("");
     const iv = all.filter((i: any) => String(i.customerId) === String(id));
@@ -92,10 +94,29 @@ export default function Compose() {
           <CardContent className="space-y-3">
             <div>
               <label className="text-xs text-muted-foreground">Customer</label>
-              <select value={customerId} onChange={(e) => onPickCustomer(e.target.value)} className="w-full bg-background border border-border rounded px-2 py-1 text-sm mt-1">
-                <option value="">Select customer…</option>
-                {customers.map((c) => (<option key={c.id} value={c.id}>{c.name} ({c.id})</option>))}
-              </select>
+              {customerId ? (
+                <div className="flex items-center justify-between bg-background border border-border rounded px-2 py-1 text-sm mt-1">
+                  <span>{customerName} <span className="text-muted-foreground">({customerId})</span></span>
+                  <button onClick={() => { setCustomerId(""); setCustSearch(""); }} className="text-xs text-primary hover:underline">change</button>
+                </div>
+              ) : (
+                <div className="mt-1">
+                  <input value={custSearch} onChange={(e) => setCustSearch(e.target.value)} placeholder="Search customer by name or ID…"
+                    className="w-full bg-background border border-border rounded px-2 py-1 text-sm" />
+                  {custSearch.trim() && (
+                    <div className="mt-1 max-h-52 overflow-y-auto border border-border rounded bg-background">
+                      {customers.filter((c) => (c.name + " " + c.id).toLowerCase().includes(custSearch.trim().toLowerCase())).slice(0, 30).map((c) => (
+                        <div key={c.id} onClick={() => onPickCustomer(c.id)} className="px-2 py-1.5 text-sm cursor-pointer hover:bg-muted/50">
+                          {c.name} <span className="text-muted-foreground">({c.id})</span>
+                        </div>
+                      ))}
+                      {customers.filter((c) => (c.name + " " + c.id).toLowerCase().includes(custSearch.trim().toLowerCase())).length === 0 && (
+                        <div className="px-2 py-1.5 text-sm text-muted-foreground">No match</div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {customerId && (
