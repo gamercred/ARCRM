@@ -166,13 +166,28 @@ export default function Compose() {
               <div className="space-y-2">
                 <div className="text-sm font-medium">{customerName}</div>
                 <div className="text-xs text-muted-foreground">{custInvoices.length} open invoice(s)</div>
-                <div className="space-y-1 pt-1">
-                  {custInvoices.map((i: any) => (
-                    <div key={i.id} className="flex justify-between text-xs border-b border-border/60 py-1">
-                      <span>{i.invoiceNumber}</span>
-                      <span className="font-mono">{formatCurrency(i.amount, "USD")}</span>
-                    </div>
-                  ))}
+                <div className="space-y-1.5 pt-1">
+                  {custInvoices.map((i: any) => {
+                    const d = Number(i.daysAged ?? 0);
+                    const ageCls = d <= 0 ? "bg-slate-500/15 text-slate-600" : d <= 30 ? "bg-yellow-500/15 text-yellow-700" : d <= 60 ? "bg-orange-500/15 text-orange-700" : "bg-red-500/15 text-red-700";
+                    const ageLabel = d <= 0 ? Math.abs(d) + "d to due" : d + "d aged";
+                    return (
+                      <div key={i.id} className="border-b border-border/60 pb-1.5">
+                        <div className="flex justify-between text-xs">
+                          <span className="font-medium">{i.invoiceNumber}</span>
+                          <span className="font-mono">{formatCurrency(i.amount, "USD")}</span>
+                        </div>
+                        <div className="flex justify-between items-center mt-0.5">
+                          <span className="text-[11px] text-muted-foreground">Due {formatDate(i.dueDate)}</span>
+                          <span className={"text-[10px] px-1.5 py-0.5 rounded font-medium " + ageCls}>{ageLabel}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="flex justify-between pt-1 text-xs font-semibold">
+                  <span>Total outstanding</span>
+                  <span className="font-mono">{formatCurrency(custInvoices.reduce((a: number, i: any) => a + (i.amount ?? 0), 0), "USD")}</span>
                 </div>
               </div>
             )}
