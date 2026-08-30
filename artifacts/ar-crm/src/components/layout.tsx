@@ -20,6 +20,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     ]},
     { title: "Cash", items: [
       { href: "/cash-application", label: "Cash application", icon: Wallet, exact: false },
+      { href: "/payment-history", label: "Payment history", icon: History, exact: false },
     ]},
   ];
 

@@ -8,6 +8,7 @@ import Receivables from "@/pages/receivables";
 import Dunning from "@/pages/dunning";
 import Compose from "@/pages/compose";
 import CashApplication from "@/pages/cash-application";
+import PaymentHistory from "@/pages/payment-history";
 import Analysts from "@/pages/analysts";
 import AnalystDashboard from "@/pages/analyst-dashboard";
 import Mailbox from "@/pages/mailbox";
@@ -28,6 +29,7 @@ function Router() {
         <Route path="/dunning" component={Dunning} />
         <Route path="/compose" component={Compose} />
         <Route path="/cash-application" component={CashApplication} />
+        <Route path="/payment-history" component={PaymentHistory} />
         <Route path="/aging-report" component={AgingReport} />
         <Route path="/analysts" component={Analysts} />
         <Route path="/analyst/:id" component={AnalystDashboard} />
