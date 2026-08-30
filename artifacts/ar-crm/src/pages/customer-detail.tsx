@@ -28,6 +28,19 @@ export default function CustomerDetail() {
     },
     enabled: !!customerId,
   });
+  const { data: custPayments } = useQuery({
+    queryKey: ["customer-payments", customerId],
+    enabled: !!customerId,
+    queryFn: async () => {
+      const { data } = await supabase.from("payments").select("*").eq("customer_id", String(customerId)).order("payment_date", { ascending: false });
+      return data ?? [];
+    },
+  });
+  const payList = Array.isArray(custPayments) ? custPayments : [];
+  const timed = payList.filter((p: any) => p.days_from_due !== null && p.days_from_due !== undefined);
+  const avgDaysFromDue = timed.length ? Math.round(timed.reduce((s: number, p: any) => s + p.days_from_due, 0) / timed.length) : null;
+  const onTimeRate = timed.length ? Math.round((timed.filter((p: any) => p.days_from_due <= 0).length / timed.length) * 100) : null;
+
   const contactList = Array.isArray(contacts) ? contacts : [];
   const primaryContact = contactList.find((c: any) => c.is_primary) || contactList[0];
   const apContact = primaryContact?.email ?? null;
@@ -230,6 +243,44 @@ export default function CustomerDetail() {
         </div>
       </div>
 
+      <Card className="bg-card">
+        <CardHeader className="pb-2"><CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Payment behaviour</CardTitle></CardHeader>
+        <CardContent>
+          {timed.length === 0 ? (
+            <p className="text-xs text-muted-foreground">No payment history yet. Recorded payments will build this customer's pattern.</p>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex gap-6">
+                <div>
+                  <div className="text-xs text-muted-foreground">Avg vs due date</div>
+                  <div className={"text-lg font-semibold " + (avgDaysFromDue! > 0 ? "text-red-700" : "text-emerald-700")}>{avgDaysFromDue! > 0 ? avgDaysFromDue + "d late" : avgDaysFromDue! < 0 ? Math.abs(avgDaysFromDue!) + "d early" : "On time"}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">On-time rate</div>
+                  <div className="text-lg font-semibold">{onTimeRate}%</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">Payments</div>
+                  <div className="text-lg font-semibold">{timed.length}</div>
+                </div>
+              </div>
+              <div className="space-y-1">
+                {payList.slice(0, 5).map((pay: any) => (
+                  <div key={pay.id} className="flex justify-between text-xs border-b border-border/60 py-1">
+                    <span>{pay.invoice_number} · {formatDate(pay.payment_date)}</span>
+                    <span className="flex items-center gap-2">
+                      <span className="font-mono">{formatCurrency(Number(pay.amount), "USD")}</span>
+                      {pay.days_from_due !== null && pay.days_from_due !== undefined && (
+                        <span className={"text-[10px] px-1.5 py-0.5 rounded font-medium " + (pay.days_from_due > 0 ? "bg-red-500/15 text-red-700" : "bg-emerald-500/15 text-emerald-700")}>{pay.days_from_due > 0 ? pay.days_from_due + "d late" : pay.days_from_due < 0 ? Math.abs(pay.days_from_due) + "d early" : "on time"}</span>
+                      )}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
       <Card className="bg-card">
         <CardHeader className="pb-2"><CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">AP Contacts</CardTitle></CardHeader>
         <CardContent className="space-y-2">
