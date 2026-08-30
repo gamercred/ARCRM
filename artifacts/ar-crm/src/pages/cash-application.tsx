@@ -52,10 +52,17 @@ export default function CashApplication() {
     if (!payDate) { setMsg("Pick a payment date."); return; }
     setSaving(true); setMsg(null);
     try {
+      let daysFromDue: number | null = null;
+      if (payFor.dueDate) {
+        const due = new Date(payFor.dueDate + "T00:00:00").getTime();
+        const paid = new Date(payDate + "T00:00:00").getTime();
+        if (!isNaN(due) && !isNaN(paid)) daysFromDue = Math.round((paid - due) / 86400000);
+      }
       const { error: pErr } = await supabase.from("payments").insert({
         invoice_id: payFor.id, invoice_number: payFor.invoiceNumber,
         customer_id: payFor.customerId, customer_name: payFor.customerName,
         amount: amt, payment_date: payDate, reference: reference.trim() || null,
+        days_from_due: daysFromDue,
         author: getAuditName() || null,
       });
       if (pErr) { setMsg("Save failed: " + pErr.message); return; }
@@ -71,6 +78,26 @@ export default function CashApplication() {
       qc.invalidateQueries({ queryKey: ["all-invoices"] });
       qc.invalidateQueries({ queryKey: ["invoices"] });
     } catch (e: any) { setMsg("Save failed: " + (e?.message || e)); } finally { setSaving(false); }
+  }
+
+  function timingLabel(d: number | null) {
+    if (d === null || d === undefined) return null;
+    if (d > 0) return { text: d + "d late", cls: "bg-red-500/15 text-red-700" };
+    if (d < 0) return { text: Math.abs(d) + "d early", cls: "bg-emerald-500/15 text-emerald-700" };
+    return { text: "on time", cls: "bg-slate-500/15 text-slate-600" };
+  }
+  // average days-from-due per customer (from recorded payments)
+  const custAvg = new Map<string, { sum: number; n: number }>();
+  (Array.isArray(payments) ? payments : []).forEach((pp: any) => {
+    if (pp.days_from_due === null || pp.days_from_due === undefined) return;
+    const k = String(pp.customer_id || pp.customer_name || "");
+    if (!custAvg.has(k)) custAvg.set(k, { sum: 0, n: 0 });
+    const a = custAvg.get(k)!; a.sum += pp.days_from_due; a.n += 1;
+  });
+  function avgFor(pp: any): number | null {
+    const k = String(pp.customer_id || pp.customer_name || "");
+    const a = custAvg.get(k);
+    return a && a.n ? Math.round(a.sum / a.n) : null;
   }
 
   return (
@@ -177,6 +204,14 @@ export default function CashApplication() {
                       <div className="flex justify-between text-muted-foreground">
                         <span className="truncate max-w-[120px]">{p.customer_name}</span>
                         <span>{formatDate(p.payment_date)}{p.reference ? " · " + p.reference : ""}</span>
+                      </div>
+                      <div className="flex justify-between items-center mt-0.5">
+                        {timingLabel(p.days_from_due) && (
+                          <span className={"text-[10px] px-1.5 py-0.5 rounded font-medium " + timingLabel(p.days_from_due)!.cls}>{timingLabel(p.days_from_due)!.text}</span>
+                        )}
+                        {avgFor(p) !== null && (
+                          <span className="text-[10px] text-muted-foreground">avg {avgFor(p)! > 0 ? avgFor(p) + "d late" : avgFor(p)! < 0 ? Math.abs(avgFor(p)!) + "d early" : "on time"}</span>
+                        )}
                       </div>
                     </div>
                   ))}
