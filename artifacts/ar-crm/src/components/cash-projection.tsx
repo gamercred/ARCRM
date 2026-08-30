@@ -5,7 +5,7 @@ import { useAllInvoices } from "@/lib/supabase-hooks";
 
 const WEEK_MS = 7 * 86400000;
 const MIN_WEEKS = 8;
-const MAX_WEEKS = 16;
+const MAX_WEEKS = 26;
 
 function fmtCur(n: number): string {
   return "$" + n.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
