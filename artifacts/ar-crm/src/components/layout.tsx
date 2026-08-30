@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Users, Mail, Bell, FileSpreadsheet, Send, PenLine, Wallet } from "lucide-react";
+import { LayoutDashboard, Users, Mail, Bell, FileSpreadsheet, Send, PenLine, Wallet, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function Layout({ children }: { children: React.ReactNode }) {
