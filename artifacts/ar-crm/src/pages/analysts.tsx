@@ -25,14 +25,14 @@ export default function Analysts() {
               </CardContent>
             </Card>
           ))
-        ) : analysts?.map((analyst) => (
+        ) : analysts?.map((analyst, idx) => (
           <Link key={analyst.id} href={`/analyst/${analyst.id}`}>
             <Card className="bg-card hover:bg-secondary/50 transition-colors cursor-pointer border-border group relative overflow-hidden">
               <div className="absolute top-0 left-0 w-1 h-full bg-primary transform origin-bottom scale-y-0 group-hover:scale-y-100 transition-transform" />
               <CardHeader className="pb-2 flex flex-row justify-between items-start">
                 <div>
-                  <CardTitle className="text-lg font-bold group-hover:text-primary transition-colors">{analyst.name}</CardTitle>
-                  <p className="text-sm text-muted-foreground">{analyst.email}</p>
+                  <CardTitle className="text-lg font-bold group-hover:text-primary transition-colors">User {idx + 1}</CardTitle>
+                  <p className="text-sm text-muted-foreground">Collections analyst</p>
                 </div>
                 <div className="w-8 h-8 rounded bg-muted flex items-center justify-center text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary transition-colors">
                   <ArrowRight className="w-4 h-4" />
