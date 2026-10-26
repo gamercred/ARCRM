@@ -155,7 +155,7 @@ export default function AnalystDashboard() {
                 sortedInvoices.map((invoice: any) => (
                   <TableRow key={invoice.id} className="hover:bg-muted/40 transition-colors align-top">
                     <TableCell className="text-sm p-2 break-words">{invoice.customerId}</TableCell>
-                    <TableCell className="text-sm p-2 break-words">{invoice.customerName}</TableCell>
+                    <TableCell className="text-sm p-2 break-words"><Link href={`/customer/${invoice.customerId}`} className="text-primary hover:underline">{invoice.customerName}</Link></TableCell>
                     <TableCell className="text-sm p-2 break-words">{invoice.invoiceNumber}</TableCell>
                     <TableCell className="text-sm p-2 break-words">{formatDate(invoice.issueDate)}</TableCell>
                     <TableCell className="text-sm p-2 break-words">{formatDate(invoice.dueDate)}</TableCell>
