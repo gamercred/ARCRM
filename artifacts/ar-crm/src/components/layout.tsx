@@ -14,7 +14,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       { href: "/my-tasks", label: "My Tasks", icon: Bell, exact: false, badge: "3" },
       { href: "/customers", label: "Customers", icon: Users, exact: false },
       { href: "/analysts", label: "Team Overview", icon: Users, exact: false },
-      { href: "/mailbox", label: "Team Mailbox", icon: Mail, exact: false },
+      { href: "/mailbox", label: "Team Mailbox", icon: Mail, exact: false, disabled: true },
       { href: "/dunning", label: "Dunning", icon: Send, exact: false },
       { href: "/compose", label: "Compose", icon: PenLine, exact: false },
     ]},
@@ -43,6 +43,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <div className="space-y-0.5">
                   {group.items.map((item: any) => {
                     const isActive = item.exact ? location === item.href : location.startsWith(item.href);
+                    const Icon2 = item.icon;
+                    if (item.disabled) {
+                      return (
+                        <div key={item.href} title="Coming soon" className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium text-sidebar-foreground/35 cursor-not-allowed select-none">
+                          <Icon2 className="w-4 h-4 shrink-0" />
+                          <span className="flex-1">{item.label}</span>
+                          <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-sidebar-accent/40 text-sidebar-foreground/50">soon</span>
+                        </div>
+                      );
+                    }
                     const Icon = item.icon;
                     return (
                       <Link key={item.href} href={item.href}>
