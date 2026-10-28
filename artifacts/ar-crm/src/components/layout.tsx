@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Users, Mail, Bell, FileSpreadsheet, Send, PenLine, Wallet, History, TrendingUp } from "lucide-react";
+import { LayoutDashboard, Users, Mail, Bell, FileSpreadsheet, Send, PenLine, Wallet, History, TrendingUp, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -21,7 +21,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
     { title: "Cash", items: [
       { href: "/cash-application", label: "Cash application", icon: Wallet, exact: false },
       { href: "/payment-history", label: "Payment history", icon: History, exact: false },
-      { href: "/forecast", label: "22-week forecast", icon: TrendingUp, exact: false },
+      { href: "/forecast", label: "22-week forecast", icon: TrendingUp, exact: true },
+      { href: "/forecast-vs-actual", label: "Forecast vs actual", icon: Target, exact: false },
     ]},
   ];
 

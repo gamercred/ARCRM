@@ -10,6 +10,7 @@ import Compose from "@/pages/compose";
 import CashApplication from "@/pages/cash-application";
 import PaymentHistory from "@/pages/payment-history";
 import Forecast from "@/pages/forecast";
+import ForecastVsActual from "@/pages/forecast-vs-actual";
 import Analysts from "@/pages/analysts";
 import AnalystDashboard from "@/pages/analyst-dashboard";
 import Mailbox from "@/pages/mailbox";
@@ -32,6 +33,7 @@ function Router() {
         <Route path="/cash-application" component={CashApplication} />
         <Route path="/payment-history" component={PaymentHistory} />
         <Route path="/forecast" component={Forecast} />
+        <Route path="/forecast-vs-actual" component={ForecastVsActual} />
         <Route path="/aging-report" component={AgingReport} />
         <Route path="/analysts" component={Analysts} />
         <Route path="/analyst/:id" component={AnalystDashboard} />
