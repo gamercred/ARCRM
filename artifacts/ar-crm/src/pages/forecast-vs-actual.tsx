@@ -10,7 +10,7 @@ const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov
 
 function weekStart(d: Date): Date {
   const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  x.setDate(x.getDate() - x.getDay()); // Sunday
+  x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); // Monday
   return x;
 }
 function addDays(d: Date, n: number): Date {
