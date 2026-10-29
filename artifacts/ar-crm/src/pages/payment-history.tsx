@@ -261,48 +261,6 @@ export default function PaymentHistory() {
           </div>
         </div>
 
-        <div className="bg-card p-4 rounded-xl border border-border">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Received prior week</span>
-            <span className="p-1 rounded bg-muted text-muted-foreground"><History className="w-3.5 h-3.5" /></span>
-          </div>
-          <div className={"text-2xl font-semibold font-mono tracking-tight " + (lastWeekTotal ? "" : "text-muted-foreground")}>{money(lastWeekTotal)}</div>
-          <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-border text-[11px]">
-            <span className="text-muted-foreground">
-              {lastWeekPays.length ? `${lastWeekPays.length} payment${lastWeekPays.length === 1 ? "" : "s"} recorded` : "No payments recorded"}
-            </span>
-            <span className="text-muted-foreground font-mono">{weekLabel(addDays(thisWeek, -7))}</span>
-          </div>
-        </div>
-
-        <div className="bg-card p-4 rounded-xl border border-border">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Portfolio avg DSO</span>
-            {portfolioDso !== null && portfolioDso > 15
-              ? <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-50 text-red-700 border border-red-200">Attention</span>
-              : <span className="p-1 rounded bg-muted text-muted-foreground"><Clock className="w-3.5 h-3.5" /></span>}
-          </div>
-          <div className="flex items-baseline gap-2">
-            <span className={"text-2xl font-semibold font-mono tracking-tight " + dsoTone(portfolioDso)}>{dsoText(portfolioDso)}</span>
-            <span className="text-xs text-muted-foreground">vs due date</span>
-          </div>
-          <div className="mt-2.5 pt-2 border-t border-border text-[11px] text-muted-foreground truncate">
-            {slowest && slowest.avgDso !== null && slowest.avgDso > 0
-              ? <>Slowest payer: <strong className="text-foreground">{dsoText(slowest.avgDso)}</strong> ({slowest.name})</>
-              : "No late payers so far"}
-          </div>
-        </div>
-
-        <div className="bg-card p-4 rounded-xl border border-border">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">On-time rate</span>
-            <span className="p-1 rounded bg-emerald-50 text-emerald-700"><CheckCircle2 className="w-3.5 h-3.5" /></span>
-          </div>
-          <div className="text-2xl font-semibold font-mono tracking-tight">{onTimeRate === null ? "—" : onTimeRate + "%"}</div>
-          <div className="mt-2.5 pt-2 border-t border-border text-[11px] text-muted-foreground">
-            {timedAll.length ? `${onTimeCount} of ${timedAll.length} payments on or before due date` : "No payments with a due date yet"}
-          </div>
-        </div>
       </div>
 
       {/* Main table */}
