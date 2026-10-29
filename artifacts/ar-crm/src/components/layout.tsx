@@ -21,6 +21,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
     { title: "Cash", items: [
       { href: "/cash-application", label: "Cash application", icon: Wallet, exact: false },
       { href: "/payment-history", label: "Payment history", icon: History, exact: false },
+    ]},
+    { title: "Reporting", items: [
       { href: "/forecast", label: "22-week forecast", icon: TrendingUp, exact: true },
       { href: "/forecast-vs-actual", label: "Forecast vs actual", icon: Target, exact: false },
     ]},
