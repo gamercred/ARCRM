@@ -4,6 +4,9 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
 import { useAllInvoices } from "@/lib/supabase-hooks";
 
+// Inbound emails section — switched off while Team Mailbox is disabled. Set to true to bring it back.
+const SHOW_INBOUND = false;
+
 function fmtUS(iso: string): string {
   if (!iso) return "—";
   const [y, m, d] = iso.split("-");
@@ -32,6 +35,7 @@ export default function MyTasks() {
 
   const { data: inbound } = useQuery({
     queryKey: ["inbound-tasks"],
+    enabled: SHOW_INBOUND,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("email_messages")
@@ -108,9 +112,10 @@ export default function MyTasks() {
     <div className="space-y-6 p-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">My Tasks</h1>
-        <p className="text-sm text-muted-foreground mt-1">Follow-up reminders and inbound customer emails needing a reply.</p>
+        <p className="text-sm text-muted-foreground mt-1">Your follow-up reminders.</p>
       </div>
 
+      {SHOW_INBOUND && (<>
       {/* Inbound emails */}
       <Card className="bg-card">
         <CardHeader className="pb-2"><CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Inbound Emails · reply within 48h</CardTitle></CardHeader>
@@ -147,6 +152,8 @@ export default function MyTasks() {
           )}
         </CardContent>
       </Card>
+
+      </>)}
 
       {/* Reminders */}
       <Card className="bg-card">
