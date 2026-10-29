@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Users, Mail, Bell, FileSpreadsheet, Send, PenLine, Wallet, History, TrendingUp, Target } from "lucide-react";
+import { LayoutDashboard, Users, Mail, Bell, FileSpreadsheet, Send, PenLine, Wallet, History, TrendingUp, Target, ArrowLeftRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -25,6 +25,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     { title: "Reporting", items: [
       { href: "/forecast", label: "22-week forecast", icon: TrendingUp, exact: true },
       { href: "/forecast-vs-actual", label: "Forecast vs actual", icon: Target, exact: false },
+      { href: "/slippage", label: "Slippage", icon: ArrowLeftRight, exact: false },
     ]},
   ];
 

@@ -11,6 +11,7 @@ import CashApplication from "@/pages/cash-application";
 import PaymentHistory from "@/pages/payment-history";
 import Forecast from "@/pages/forecast";
 import ForecastVsActual from "@/pages/forecast-vs-actual";
+import Slippage from "@/pages/slippage";
 import Analysts from "@/pages/analysts";
 import AnalystDashboard from "@/pages/analyst-dashboard";
 import Mailbox from "@/pages/mailbox";
@@ -34,6 +35,7 @@ function Router() {
         <Route path="/payment-history" component={PaymentHistory} />
         <Route path="/forecast" component={Forecast} />
         <Route path="/forecast-vs-actual" component={ForecastVsActual} />
+        <Route path="/slippage" component={Slippage} />
         <Route path="/aging-report" component={AgingReport} />
         <Route path="/analysts" component={Analysts} />
         <Route path="/analyst/:id" component={AnalystDashboard} />
