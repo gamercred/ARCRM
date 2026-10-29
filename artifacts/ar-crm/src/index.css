@@ -67,31 +67,31 @@
 
 :root {
   /* Bloomberg terminal meets modern SaaS. Ink/navy base with electric blue accents */
-  --background: 220 20% 97%;
-  --foreground: 222 30% 16%;
-  --border: 220 16% 90%;
-  --input: 220 16% 90%;
-  --ring: 227 68% 55%;
+  --background: 240 20% 99%;
+  --foreground: 240 6% 10%;
+  --border: 240 6% 91%;
+  --input: 240 6% 91%;
+  --ring: 228 84% 55%;
 
   --card: 0 0% 100%;
-  --card-foreground: 222 30% 16%;
-  --card-border: 220 16% 90%;
+  --card-foreground: 240 6% 10%;
+  --card-border: 240 6% 91%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 222 30% 16%;
-  --popover-border: 220 16% 90%;
+  --popover-foreground: 240 6% 10%;
+  --popover-border: 240 6% 91%;
 
-  --primary: 227 68% 55%;
+  --primary: 228 84% 55%;
   --primary-foreground: 0 0% 100%;
 
-  --secondary: 220 16% 94%;
-  --secondary-foreground: 222 30% 16%;
+  --secondary: 240 5% 96%;
+  --secondary-foreground: 240 6% 10%;
 
-  --muted: 220 16% 94%;
-  --muted-foreground: 220 10% 46%;
+  --muted: 240 5% 96%;
+  --muted-foreground: 240 4% 46%;
 
-  --accent: 220 16% 94%;
-  --accent-foreground: 222 30% 16%;
+  --accent: 240 5% 96%;
+  --accent-foreground: 240 6% 10%;
 
   --destructive: 0 72% 51%;
   --destructive-foreground: 0 0% 100%;
@@ -113,7 +113,7 @@
 
   --app-font-sans: 'Inter', sans-serif;
   --app-font-mono: 'JetBrains Mono', monospace;
-  --radius: 0.25rem;
+  --radius: 0.625rem;
 
   --button-outline: rgba(0,0,0, .10);
   --badge-outline: rgba(0,0,0, .05);
