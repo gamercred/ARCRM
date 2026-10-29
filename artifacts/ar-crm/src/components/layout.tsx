@@ -60,10 +60,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       <Link key={item.href} href={item.href}>
                         <div className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
                           isActive
-                            ? "bg-sidebar-accent text-white"
-                            : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-white"
+                            ? "bg-sidebar-accent text-sidebar-foreground font-semibold"
+                            : "text-sidebar-foreground/70 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground"
                         }`}>
-                          <Icon className="w-4 h-4 shrink-0" />
+                          <Icon className={"w-4 h-4 shrink-0 " + (isActive ? "text-primary" : "opacity-60")} />
                           <span className="flex-1">{item.label}</span>
                           {item.badge && (
                             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-500 text-white leading-none">{item.badge}</span>
