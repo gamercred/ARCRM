@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "wouter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
@@ -68,6 +69,7 @@ export default function ForecastVsActual() {
     },
   });
   const [selected, setSelected] = useState<string | null>(null);
+  const [showPays, setShowPays] = useState(false);
   const triedAuto = useRef(false);
 
   const thisWeek = weekStart(new Date());
@@ -173,6 +175,19 @@ export default function ForecastVsActual() {
   }, [snaps, payments, invoices]);
 
   const sel = rows.find((r) => r.iso === (selected || thisISO)) || rows[0];
+  const invById = new Map<string, any>();
+  const invByNum = new Map<string, any>();
+  invList.forEach((i: any) => { invById.set(String(i.id), i); invByNum.set(String(i.invoiceNumber), i); });
+  function isEarlyPay(p: any): boolean {
+    const inv = invById.get(String(p.invoice_id)) || invByNum.get(String(p.invoice_number));
+    const exp = inv?.expectedPaymentDate;
+    return !!(exp && p.payment_date && weekStart(fromISO(exp)).getTime() > weekStart(fromISO(p.payment_date)).getTime());
+  }
+  const weekPays = sel
+    ? payList.filter((p: any) => p.payment_date && toISO(weekStart(fromISO(p.payment_date))) === sel.iso)
+        .sort((a: any, b: any) => Number(b.amount || 0) - Number(a.amount || 0))
+    : [];
+  const weekPaysTotal = weekPays.reduce((sum: number, p: any) => sum + Number(p.amount || 0), 0);
   const started = rows.filter((r) => r.status !== "upcoming" && r.fc !== null);
   const totFc = started.reduce((s, r) => s + (r.fc || 0), 0);
   const totAct = started.reduce((s, r) => s + (r.act || 0), 0);
@@ -209,8 +224,8 @@ export default function ForecastVsActual() {
               {sel.fc === null ? "no forecast saved for this week" : `${sel.fcCount} invoices · ${sel.source === "locked" ? "set at start of week" : "projected"}`}
             </div>
           </CardContent></Card>
-          <Card className="bg-card"><CardContent className="p-4">
-            <div className="text-xs text-muted-foreground uppercase tracking-wider">Actual received</div>
+          <Card onClick={() => sel && sel.act !== null && setShowPays(!showPays)} className={"bg-card transition-colors " + (sel && sel.act !== null ? "cursor-pointer hover:border-primary/40 " : "") + (showPays ? "ring-2 ring-primary" : "")}><CardContent className="p-4">
+            <div className="text-xs text-muted-foreground uppercase tracking-wider">Actual received{sel && sel.act !== null && <span className="normal-case tracking-normal text-primary ml-1">· {showPays ? "hide" : "view"} payments</span>}</div>
             <div className="text-2xl font-bold font-mono mt-1">{sel.act === null ? "—" : fmtCur(sel.act)}</div>
             <div className="text-xs text-muted-foreground mt-1">
               {sel.act === null ? "week hasn't started" : collectedPct === null ? "payments received this week" : `${collectedPct.toFixed(1)}% of forecast collected`}
@@ -225,6 +240,51 @@ export default function ForecastVsActual() {
             <div className={"text-xs mt-1 " + tone(sel.varPct)}>{pctText(sel.varPct)}</div>
           </CardContent></Card>
         </div>
+      )}
+
+      {showPays && sel && sel.act !== null && (
+        <Card className="bg-card">
+          <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Payments received · {weekLabel(sel.start)}</CardTitle>
+            <button onClick={() => setShowPays(false)} className="text-xs text-muted-foreground hover:text-foreground">Close</button>
+          </CardHeader>
+          <CardContent className="p-0">
+            {weekPays.length === 0 ? (
+              <p className="p-6 text-center text-sm text-muted-foreground">No payments recorded in this week yet.</p>
+            ) : (
+              <div className="text-sm">
+                <div className="grid grid-cols-12 gap-2 px-4 py-2 text-[10px] uppercase tracking-wider text-muted-foreground bg-muted/40 border-b border-border">
+                  <div className="col-span-2">Paid on</div>
+                  <div className="col-span-2">Invoice</div>
+                  <div className="col-span-3">Customer</div>
+                  <div className="col-span-2">Reference</div>
+                  <div className="col-span-2 text-right">Amount</div>
+                  <div className="col-span-1 text-right">Share</div>
+                </div>
+                {weekPays.map((p: any) => (
+                  <div key={p.id} className="grid grid-cols-12 gap-2 px-4 py-2 items-center border-b border-border/50">
+                    <div className="col-span-2 font-mono text-xs text-muted-foreground">{p.payment_date}</div>
+                    <div className="col-span-2 font-mono text-xs">
+                      {p.invoice_number}
+                      {isEarlyPay(p) && <span className="ml-1.5 inline-flex px-1.5 py-0.5 rounded border text-[10px] font-sans font-medium bg-violet-50 text-violet-700 border-violet-200">Paid early</span>}
+                    </div>
+                    <div className="col-span-3 truncate">
+                      {p.customer_id ? <Link href={`/customer/${p.customer_id}`} className="text-primary hover:underline">{p.customer_name}</Link> : p.customer_name}
+                    </div>
+                    <div className="col-span-2 font-mono text-xs text-muted-foreground truncate">{p.reference || "—"}</div>
+                    <div className="col-span-2 text-right font-mono">{fmtCur(Number(p.amount || 0))}</div>
+                    <div className="col-span-1 text-right font-mono text-xs text-muted-foreground">{weekPaysTotal ? ((Number(p.amount || 0) / weekPaysTotal) * 100).toFixed(0) + "%" : "—"}</div>
+                  </div>
+                ))}
+                <div className="grid grid-cols-12 gap-2 px-4 py-2.5 items-center font-semibold bg-muted/30">
+                  <div className="col-span-9">{weekPays.length} payment{weekPays.length === 1 ? "" : "s"}</div>
+                  <div className="col-span-2 text-right font-mono">{fmtCur(weekPaysTotal)}</div>
+                  <div className="col-span-1" />
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       <Card className="bg-card">
@@ -247,7 +307,7 @@ export default function ForecastVsActual() {
                 <div className="col-span-2 font-medium">{weekLabel(r.start)}</div>
                 <div className="col-span-2">{statusChip(r.status)}</div>
                 <div className="col-span-2 text-right font-mono">{r.fc === null ? "—" : fmtCur(r.fc)}</div>
-                <div className="col-span-2 text-right font-mono">{r.act === null ? "—" : fmtCur(r.act)}{r.early > 0 && <div className="text-[10px] text-violet-700 font-sans">incl. {fmtCur(r.early)} early</div>}</div>
+                <div onClick={() => r.act !== null && setShowPays(true)} className={"col-span-2 text-right font-mono" + (r.act !== null ? " hover:text-primary hover:underline" : "")}>{r.act === null ? "—" : fmtCur(r.act)}{r.early > 0 && <div className="text-[10px] text-violet-700 font-sans">incl. {fmtCur(r.early)} early</div>}</div>
                 <div className={"col-span-2 text-right font-mono " + tone(r.varAmt)}>
                   {r.varAmt === null ? "—" : (r.varAmt >= 0 ? "+" : "") + fmtCur(r.varAmt)}
                 </div>
