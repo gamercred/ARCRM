@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useState } from "react";
 import { ImportArButton } from "@/components/import-ar-button";
 import { AnalystPicker } from "@/components/analyst-picker";
@@ -39,6 +39,7 @@ function KpiCard({ label, value, sub, color, icon: Icon }: {
 }
 
 export default function Dashboard() {
+  const [, navigate] = useLocation();
   const { data: summary, isLoading: isLoadingSummary } = useGetDashboardSummary();
   const { data: aging, isLoading: isLoadingAging } = useGetDashboardAging();
 
@@ -158,7 +159,7 @@ export default function Dashboard() {
           icon={Clock}
         />
         <div className="grid grid-cols-2 gap-2 col-span-2 lg:col-span-1">
-          <Card onClick={() => setCapsuleFilter(capsuleFilter === "disputed" ? null : "disputed")} className={"bg-card cursor-pointer transition " + (capsuleFilter === "disputed" ? "ring-2 ring-amber-400" : "hover:bg-muted/40")}>
+          <Card onClick={() => navigate("/receivables?capsule=disputed")} className={"bg-card cursor-pointer transition " + (capsuleFilter === "disputed" ? "ring-2 ring-amber-400" : "hover:bg-muted/40")}>
             <CardContent className="p-3">
               <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
                 <AlertTriangle className="w-3 h-3 text-amber-400" /> Disputed
@@ -169,7 +170,7 @@ export default function Dashboard() {
               <div className="text-xs text-muted-foreground mt-1">{isLoadingSummary ? "—" : formatCurrency(summary?.disputedAmount ?? 0)}</div>
             </CardContent>
           </Card>
-          <Card onClick={() => setCapsuleFilter(capsuleFilter === "ptp" ? null : "ptp")} className={"bg-card cursor-pointer transition " + (capsuleFilter === "ptp" ? "ring-2 ring-cyan-400" : "hover:bg-muted/40")}>
+          <Card onClick={() => navigate("/receivables?capsule=ptp")} className={"bg-card cursor-pointer transition " + (capsuleFilter === "ptp" ? "ring-2 ring-cyan-400" : "hover:bg-muted/40")}>
             <CardContent className="p-3">
               <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
                 <FileCheck className="w-3 h-3 text-cyan-400" /> PTP / In-Transit

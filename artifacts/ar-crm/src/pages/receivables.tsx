@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ImportArButton } from "@/components/import-ar-button";
 import { AnalystPicker } from "@/components/analyst-picker";
 import { StatusCell } from "@/components/status-cell";
@@ -49,6 +49,10 @@ export default function Receivables() {
   const [colFilters, setColFilters] = useState<Record<string, string>>({});
   const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" } | null>(null);
   const [capsuleFilter, setCapsuleFilter] = useState<string | null>(null);
+  useEffect(() => {
+    const c = new URLSearchParams(window.location.search).get("capsule");
+    if (c) setCapsuleFilter(c);
+  }, []);
 
   const { data: invoicesData, isLoading: isLoadingInvoices } = useListInvoices({
     search: search || undefined,
@@ -84,7 +88,7 @@ export default function Receivables() {
   }
   const CAPSULE_STATUSES: Record<string, string[]> = {
     disputed: ["PO Issue", "Billing Issue", "Disputed Billing"],
-    ptp: ["P2P (Promise to Pay)", "In-Transit Payment"],
+    ptp: ["P2P", "P2P (Promise to Pay)", "In-Transit Payment"],
     intransit: ["In-Transit Payment"],
   };
   const filteredInvoices = rawInvoices.filter((inv: any) => {
@@ -180,6 +184,12 @@ export default function Receivables() {
         </div>
       </div>
 
+      {capsuleFilter && (
+        <div className="flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-sm">
+          <span>Showing <b>{capsuleFilter === "disputed" ? "Disputed" : "PTP / In-transit"}</b> invoices ({filteredInvoices.length}) · status: {(CAPSULE_STATUSES[capsuleFilter] || []).join(", ")}</span>
+          <button onClick={() => { setCapsuleFilter(null); window.history.replaceState(null, "", "/receivables"); }} className="text-xs text-primary hover:underline">Clear filter</button>
+        </div>
+      )}
       {/* Invoice Table */}
       <div className="w-full">
         <Table className="table-fixed w-full text-sm">
