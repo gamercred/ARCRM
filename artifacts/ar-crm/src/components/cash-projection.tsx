@@ -37,6 +37,7 @@ export function CashProjection() {
   const [showEarlier, setShowEarlier] = useState(false);
   const [showAllThis, setShowAllThis] = useState(false);
   const [showAllNext, setShowAllNext] = useState(false);
+  const [showLater, setShowLater] = useState(false);
 
   const d = useMemo(() => {
     const thisWeek = weekStart(new Date()).getTime();
@@ -78,6 +79,8 @@ export function CashProjection() {
     const earlierCount = earlier.reduce((s, w) => s + w.count, 0);
     return { thisWeek, current, next, comingUp, later, earlier, beyond, grand, futureMax, earlierMax, earlierTotal, earlierCount };
   }, [invoices]);
+  const laterTotal = d.later.reduce((sum, w) => sum + w.total, 0) + d.beyond.total;
+  const laterCount = d.later.reduce((sum, w) => sum + w.count, 0) + d.beyond.count;
 
   function InvoiceRows({ items, limit }: { items: any[]; limit?: number }) {
     const list = limit ? items.slice(0, limit) : items;
@@ -168,18 +171,31 @@ export function CashProjection() {
               {d.comingUp.map((w) => <Row key={w.key} w={w} size="normal" max={d.futureMax} />)}
             </div>
 
-            {/* Tier 3 — week 9 onwards */}
-            <div>
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 px-2">Later</div>
-              {d.later.map((w) => <Row key={w.key} w={w} size="compact" max={d.futureMax} />)}
-              {d.beyond.count > 0 && (
-                <div className="grid grid-cols-12 gap-3 items-center px-2 py-1 text-xs text-muted-foreground">
-                  <div className="col-span-9">Beyond {FUTURE_WEEKS} weeks</div>
-                  <div className="col-span-2 text-right font-mono">{fmtCur(d.beyond.total)}</div>
-                  <div className="col-span-1 text-right">{d.beyond.count} inv</div>
+            {/* Tier 3 — week 9 onwards (folded) */}
+            {(d.later.length > 0 || d.beyond.count > 0) && (
+              <div>
+                <div onClick={() => setShowLater(!showLater)}
+                  className="grid grid-cols-12 gap-3 items-center px-2 py-1.5 text-xs cursor-pointer hover:bg-muted/30 rounded">
+                  <div className="col-span-9 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    {showLater ? "▾" : "▸"} Later · {d.later.length} weeks{d.later.length ? " (" + rangeLabel(d.later[0].key) + " onwards)" : ""}{showLater ? "" : " · click to view"}
+                  </div>
+                  <div className="col-span-2 text-right font-mono">{fmtCur(laterTotal)}</div>
+                  <div className="col-span-1 text-right text-muted-foreground">{laterCount} inv</div>
                 </div>
-              )}
-            </div>
+                {showLater && (
+                  <>
+                    {d.later.map((w) => <Row key={w.key} w={w} size="compact" max={d.futureMax} />)}
+                    {d.beyond.count > 0 && (
+                      <div className="grid grid-cols-12 gap-3 items-center px-2 py-1 text-xs text-muted-foreground">
+                        <div className="col-span-9">Beyond {FUTURE_WEEKS} weeks</div>
+                        <div className="col-span-2 text-right font-mono">{fmtCur(d.beyond.total)}</div>
+                        <div className="col-span-1 text-right">{d.beyond.count} inv</div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
 
             {/* Earlier weeks — collapsed */}
             {d.earlier.length > 0 && (
