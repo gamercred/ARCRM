@@ -79,6 +79,7 @@ export default function PaymentHistory() {
   const [openCust, setOpenCust] = useState<string | null>(null);
   const [drawer, setDrawer] = useState<any | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [showEarlier, setShowEarlier] = useState(false);
 
   const { data: payments, isLoading } = useQuery({
     queryKey: ["all-payments"],
@@ -161,6 +162,12 @@ export default function PaymentHistory() {
     return list;
   }, [payments, search]);
 
+  const upcomingWeeks = weeks.filter((w) => w.iso >= thisISO);
+  const earlierWeeks = weeks.filter((w) => w.iso < thisISO);
+  const earlierTotal = earlierWeeks.reduce((sum, w) => sum + w.total, 0);
+  const earlierCount = earlierWeeks.reduce((sum, w) => sum + w.payments.length, 0);
+  const earlierOpen = !!q || showEarlier;
+
   // ---------- customers ----------
   const customerStats = (rows: any[]) => {
     const m = new Map<string, { key: string; id: any; name: string; payments: any[] }>();
@@ -212,6 +219,7 @@ export default function PaymentHistory() {
   const allOpen = weeks.length > 0 && weeks.every((w) => expanded.has(w.iso));
   function toggleAll() {
     setExpanded(allOpen ? new Set() : new Set(weeks.map((w) => w.iso)));
+    setShowEarlier(!allOpen);
   }
 
   const segBtn = (active: boolean) =>
@@ -329,7 +337,74 @@ export default function PaymentHistory() {
               <div className="col-span-3 text-right">Total received</div>
             </div>
             {weeks.length === 0 && <p className="p-6 text-center text-sm text-muted-foreground">No payments match your search.</p>}
-            {weeks.map((w) => {
+            {upcomingWeeks.map((w) => {
+              const open = isOpen(w.iso);
+              return (
+                <div key={w.iso} className="border-b border-border/70">
+                  <div onClick={() => toggleWeek(w.iso)} className={"grid grid-cols-12 px-5 py-3 items-center cursor-pointer select-none hover:bg-muted/30 " + (w.iso === thisISO ? "bg-primary/5" : "")}>
+                    <div className="col-span-5 flex items-center gap-2.5">
+                      <ChevronRight className={"w-4 h-4 text-muted-foreground transition-transform " + (open ? "rotate-90" : "")} />
+                      <span className="font-semibold text-sm">{weekLabel(w.start)}</span>
+                      {w.iso === thisISO && <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary/10 text-primary border border-primary/20">This week</span>}{w.payments.filter((p: any) => earlyInfo(p)).length > 0 && <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-violet-50 text-violet-700 border border-violet-200">{w.payments.filter((p: any) => earlyInfo(p)).length} paid early</span>}
+                    </div>
+                    <div className="col-span-2 text-right font-mono">{w.payments.length}</div>
+                    <div className="col-span-2 text-right font-mono">{w.customers.size}</div>
+                    <div className="col-span-3 text-right font-mono font-semibold text-sm">{money(w.total)}</div>
+                  </div>
+                  {open && (
+                    <div className="bg-muted/20 border-t border-border/50">
+                      {w.payments.length === 0 ? (
+                        <p className="px-6 py-3 text-muted-foreground">No payments recorded yet this week.</p>
+                      ) : (
+                        <>
+                          <div className="grid grid-cols-12 px-6 py-2 text-[10px] uppercase font-semibold text-muted-foreground tracking-wider border-b border-border/50">
+                            <div className="col-span-2">Paid on</div>
+                            <div className="col-span-2">Invoice #</div>
+                            <div className="col-span-3">Customer</div>
+                            <div className="col-span-2">Reference</div>
+                            <div className="col-span-2 text-right">Amount</div>
+                            <div className="col-span-1 text-right">Vs due</div>
+                          </div>
+                          {w.payments.map((p: any) => (
+                            <div key={p.id} className="grid grid-cols-12 px-6 py-2.5 items-center border-b border-border/40 last:border-0 hover:bg-primary/5">
+                              <div className="col-span-2 font-mono text-muted-foreground">{formatDate(p.payment_date)}</div>
+                              <div className="col-span-2">
+                                <button onClick={() => setDrawer(p)} className="font-mono text-primary font-medium hover:underline">{p.invoice_number}</button>{earlyInfo(p) && <div className="mt-0.5"><span className="inline-flex px-1.5 py-0.5 rounded border text-[10px] font-medium bg-violet-50 text-violet-700 border-violet-200">Paid early · exp. {shortWeek(earlyInfo(p)!.expectedStart)}</span></div>}
+                              </div>
+                              <div className="col-span-3 truncate">
+                                {p.customer_id
+                                  ? <Link href={`/customer/${p.customer_id}`} className="font-medium hover:text-primary">{p.customer_name}</Link>
+                                  : <span className="font-medium">{p.customer_name}</span>}
+                              </div>
+                              <div className="col-span-2 font-mono text-muted-foreground text-[11px] flex items-center gap-1.5 min-w-0">
+                                <span className="truncate">{p.reference || "—"}</span>
+                                {p.reference && <Copy onClick={() => copyRef(p.reference)} className="w-3 h-3 shrink-0 cursor-pointer opacity-40 hover:opacity-100" />}
+                              </div>
+                              <div className="col-span-2 text-right font-mono font-medium">{money(Number(p.amount))}</div>
+                              <div className="col-span-1 text-right"><DelayBadge d={p.days_from_due} /></div>
+                            </div>
+                          ))}
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            {earlierWeeks.length > 0 && (
+              <div onClick={() => setShowEarlier(!showEarlier)}
+                className="grid grid-cols-12 px-5 py-3 items-center cursor-pointer select-none bg-muted/30 hover:bg-muted/50 border-b border-border/70">
+                <div className="col-span-5 flex items-center gap-2.5 text-muted-foreground">
+                  <ChevronRight className={"w-4 h-4 transition-transform " + (earlierOpen ? "rotate-90" : "")} />
+                  <span className="font-semibold text-sm">Earlier weeks</span>
+                  <span className="text-[11px]">{earlierWeeks.length} week{earlierWeeks.length === 1 ? "" : "s"}{q ? " · showing matches" : earlierOpen ? "" : " · click to view"}</span>
+                </div>
+                <div className="col-span-2 text-right font-mono text-muted-foreground">{earlierCount}</div>
+                <div className="col-span-2" />
+                <div className="col-span-3 text-right font-mono font-semibold text-sm text-muted-foreground">{money(earlierTotal)}</div>
+              </div>
+            )}
+            {earlierOpen && earlierWeeks.map((w) => {
               const open = isOpen(w.iso);
               return (
                 <div key={w.iso} className="border-b border-border/70">
