@@ -49,6 +49,7 @@ export default function Receivables() {
   const [colFilters, setColFilters] = useState<Record<string, string>>({});
   const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" } | null>(null);
   const [capsuleFilter, setCapsuleFilter] = useState<string | null>(null);
+  const [showPaid, setShowPaid] = useState(false);
   useEffect(() => {
     const c = new URLSearchParams(window.location.search).get("capsule");
     if (c) setCapsuleFilter(c);
@@ -79,7 +80,10 @@ export default function Receivables() {
     { key: "actualInvoiceStage", label: "Actual Invoice Stage", get: (i) => i.actualInvoiceStage },
     { key: "manualStatus", label: "Status", get: (i) => i.manualStatus },
   ];
-  const rawInvoices = invoicesData?.invoices ?? [];
+  const allRows = invoicesData?.invoices ?? [];
+  const isPaid = (i: any) => String(i.manualStatus ?? "").trim() === "Paid" || (Number(i.amount) - Number(i.paidAmount ?? 0)) <= 0.01;
+  const paidCount = allRows.filter(isPaid).length;
+  const rawInvoices = showPaid ? allRows : allRows.filter((i: any) => !isPaid(i));
   const distinctVals: Record<string, string[]> = {};
   for (const c of COLS) {
     const set = new Set<string>();
@@ -173,6 +177,10 @@ export default function Receivables() {
               ))}
             </SelectContent>
           </Select>
+          <label className="flex items-center gap-1.5 text-xs text-muted-foreground whitespace-nowrap cursor-pointer">
+            <input type="checkbox" checked={showPaid} onChange={(e) => setShowPaid(e.target.checked)} />
+            Show paid{paidCount ? ` (${paidCount})` : ""}
+          </label>
           {(search || status !== "all" || analystId !== "all") && (
             <button
               className="text-xs text-muted-foreground hover:text-foreground"
@@ -263,7 +271,7 @@ export default function Receivables() {
 
       {invoicesData && (
         <div className="text-xs text-muted-foreground text-right">
-          Showing {filteredInvoices.length} of {invoicesData.total} invoices
+          Showing {filteredInvoices.length} of {rawInvoices.length} invoices{!showPaid && paidCount ? ` · ${paidCount} paid hidden` : ""}
         </div>
       )}
 
