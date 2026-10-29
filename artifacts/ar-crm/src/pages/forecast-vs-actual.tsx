@@ -5,7 +5,8 @@ import { supabase } from "@/lib/supabase";
 import { useAllInvoices } from "@/lib/supabase-hooks";
 import { getAuditName } from "@/lib/audit";
 
-const HISTORY_WEEKS = 12;
+const FORWARD_WEEKS = 12; // this week + 11 ahead
+const MAX_PAST_WEEKS = 26;
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
 function weekStart(d: Date): Date {
@@ -22,13 +23,30 @@ function toISO(d: Date): string {
 function fromISO(iso: string): Date {
   return new Date(iso + "T00:00:00");
 }
-function rangeLabel(start: Date): string {
-  const e = addDays(start, 6);
-  return `${start.getDate()} ${MONTHS[start.getMonth()]} – ${e.getDate()} ${MONTHS[e.getMonth()]}`;
+// Mon–Fri label, e.g. "26 – 30 Oct" or "29 Dec – 2 Jan"
+function weekLabel(start: Date): string {
+  const e = addDays(start, 4);
+  return start.getMonth() === e.getMonth()
+    ? `${start.getDate()} – ${e.getDate()} ${MONTHS[e.getMonth()]}`
+    : `${start.getDate()} ${MONTHS[start.getMonth()]} – ${e.getDate()} ${MONTHS[e.getMonth()]}`;
 }
 function fmtCur(n: number): string {
   return n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 }
+function pctText(p: number | null): string {
+  if (p === null || !isFinite(p)) return "—";
+  return (p >= 0 ? "+" : "") + p.toFixed(1) + "%";
+}
+function tone(v: number | null): string {
+  if (v === null) return "text-muted-foreground";
+  return v >= 0 ? "text-emerald-700" : "text-red-700";
+}
+
+type Row = {
+  iso: string; start: Date; status: "done" | "current" | "upcoming";
+  fc: number | null; fcCount: number; source: "locked" | "projected" | "none";
+  act: number | null; varAmt: number | null; varPct: number | null;
+};
 
 export default function ForecastVsActual() {
   const qc = useQueryClient();
@@ -44,195 +62,197 @@ export default function ForecastVsActual() {
   const { data: snaps } = useQuery({
     queryKey: ["forecast-snapshots"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("forecast_snapshots").select("*").order("week_start", { ascending: false });
+      const { data, error } = await supabase.from("forecast_snapshots").select("*").order("week_start", { ascending: true });
       if (error) throw error;
       return data ?? [];
     },
   });
-  const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
   const triedAuto = useRef(false);
 
   const thisWeek = weekStart(new Date());
   const thisISO = toISO(thisWeek);
-  const snapList = Array.isArray(snaps) ? snaps : [];
+  const invList = Array.isArray(invoices) ? invoices : [];
   const payList = Array.isArray(payments) ? payments : [];
-  const currentSnap = snapList.find((s: any) => s.week_start === thisISO);
+  const snapList = Array.isArray(snaps) ? snaps : [];
 
-  // Forecast for the current week, reconstructed as at the start of the week
-  function computeForecast() {
-    const startMs = thisWeek.getTime();
-    const endMs = addDays(thisWeek, 7).getTime();
-    const paidThisWeek = new Map<string, number>();
+  // Forecast for a week = open amount on invoices expected that week,
+  // adding back any payments already received in that week (start-of-week view).
+  function computeForWeek(start: Date) {
+    const startMs = start.getTime();
+    const endMs = addDays(start, 7).getTime();
+    const paidInWeek = new Map<string, number>();
     payList.forEach((p: any) => {
       if (!p.payment_date) return;
       const t = fromISO(p.payment_date).getTime();
       if (t >= startMs && t < endMs) {
         const k = String(p.invoice_id || p.invoice_number);
-        paidThisWeek.set(k, (paidThisWeek.get(k) || 0) + Number(p.amount || 0));
+        paidInWeek.set(k, (paidInWeek.get(k) || 0) + Number(p.amount || 0));
       }
     });
     let total = 0;
     let count = 0;
-    (Array.isArray(invoices) ? invoices : []).forEach((inv: any) => {
+    invList.forEach((inv: any) => {
       const iso = inv.expectedPaymentDate;
       if (!iso) return;
       const t = fromISO(iso).getTime();
       if (isNaN(t) || t < startMs || t >= endMs) return;
-      const back = (paidThisWeek.get(String(inv.id)) || 0) + (paidThisWeek.get(String(inv.invoiceNumber)) || 0);
+      const back = (paidInWeek.get(String(inv.id)) || 0) + (paidInWeek.get(String(inv.invoiceNumber)) || 0);
       const open = Number(inv.amount ?? 0) - Number(inv.paidAmount ?? 0) + back;
       if (open > 0.01) { total += open; count += 1; }
     });
     return { total, count };
   }
 
-  async function lock(overwrite: boolean, method: "auto" | "manual") {
-    setBusy(true);
-    setMsg(null);
-    try {
-      const { total, count } = computeForecast();
-      const row = {
-        week_start: thisISO,
-        forecast_amount: Math.round(total * 100) / 100,
-        invoice_count: count,
-        method,
-        taken_by: getAuditName() || null,
-        taken_at: new Date().toISOString(),
-      };
-      const { error } = await supabase.from("forecast_snapshots").upsert(row, { onConflict: "week_start", ignoreDuplicates: !overwrite });
-      if (error) { setMsg("Snapshot failed: " + error.message); return; }
-      if (method === "manual") setMsg("This week's forecast is locked ✓");
-      qc.invalidateQueries({ queryKey: ["forecast-snapshots"] });
-    } catch (e: any) {
-      setMsg("Snapshot failed: " + (e?.message || e));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  // Auto-snapshot: first visit in a week with no snapshot yet
+  // Quietly save this week's forecast the first time the page opens this week
   useEffect(() => {
     if (triedAuto.current) return;
     if (!Array.isArray(snaps) || !Array.isArray(invoices) || !Array.isArray(payments)) return;
-    if (invoices.length === 0) return; // don't lock an empty forecast while data is missing
+    if (invoices.length === 0) return;
     triedAuto.current = true;
-    if (!snaps.some((s: any) => s.week_start === thisISO)) lock(false, "auto");
+    if (snaps.some((s: any) => s.week_start === thisISO)) return;
+    const { total, count } = computeForWeek(thisWeek);
+    supabase.from("forecast_snapshots").upsert({
+      week_start: thisISO,
+      forecast_amount: Math.round(total * 100) / 100,
+      invoice_count: count,
+      method: "auto",
+      taken_by: getAuditName() || null,
+      taken_at: new Date().toISOString(),
+    }, { onConflict: "week_start", ignoreDuplicates: true }).then(() => {
+      qc.invalidateQueries({ queryKey: ["forecast-snapshots"] });
+    });
   }, [snaps, invoices, payments]);
 
-  function onManual() {
-    if (currentSnap && !confirm("Replace this week's locked forecast with the current numbers?")) return;
-    lock(true, "manual");
-  }
-
-  const rows = useMemo(() => {
+  const rows: Row[] = useMemo(() => {
     const snapMap = new Map<string, any>(snapList.map((s: any) => [s.week_start, s]));
-    const actual = new Map<string, number>();
+    const actualMap = new Map<string, number>();
     payList.forEach((p: any) => {
       if (!p.payment_date) return;
       const ws = toISO(weekStart(fromISO(p.payment_date)));
-      actual.set(ws, (actual.get(ws) || 0) + Number(p.amount || 0));
+      actualMap.set(ws, (actualMap.get(ws) || 0) + Number(p.amount || 0));
     });
-    const out: any[] = [];
-    for (let i = 0; i < HISTORY_WEEKS; i++) {
-      const start = addDays(thisWeek, -7 * i);
+
+    // start from the earliest saved week (tracking start), or this week
+    let first = thisWeek;
+    const earliest = snapList.length ? weekStart(fromISO(snapList[0].week_start)) : null;
+    if (earliest && earliest.getTime() < thisWeek.getTime()) first = earliest;
+    const oldestAllowed = addDays(thisWeek, -7 * MAX_PAST_WEEKS);
+    if (first.getTime() < oldestAllowed.getTime()) first = oldestAllowed;
+
+    const out: Row[] = [];
+    const last = addDays(thisWeek, 7 * (FORWARD_WEEKS - 1));
+    for (let start = first; start.getTime() <= last.getTime(); start = addDays(start, 7)) {
       const iso = toISO(start);
-      const s = snapMap.get(iso);
-      const fc = s ? Number(s.forecast_amount) : null;
-      const act = actual.get(iso) || 0;
-      out.push({
-        iso, start, snap: s, fc, act,
-        varAmt: fc === null ? null : act - fc,
-        varPct: fc ? ((act - fc) / fc) * 100 : null,
-        current: i === 0,
-      });
+      const status: Row["status"] = iso < thisISO ? "done" : iso === thisISO ? "current" : "upcoming";
+      const snap = snapMap.get(iso);
+      let fc: number | null = null;
+      let fcCount = 0;
+      let source: Row["source"] = "none";
+      if (snap) {
+        fc = Number(snap.forecast_amount); fcCount = Number(snap.invoice_count || 0); source = "locked";
+      } else if (status !== "done") {
+        const c = computeForWeek(start); fc = c.total; fcCount = c.count; source = "projected";
+      }
+      const act = status === "upcoming" ? null : actualMap.get(iso) || 0;
+      const varAmt = fc !== null && act !== null ? act - fc : null;
+      const varPct = fc && act !== null ? ((act - fc) / fc) * 100 : null;
+      out.push({ iso, start, status, fc, fcCount, source, act, varAmt, varPct });
     }
     return out;
-  }, [snaps, payments]);
+  }, [snaps, payments, invoices]);
 
-  const done = rows.filter((r) => !r.current && r.fc !== null);
-  const totFc = done.reduce((s, r) => s + r.fc, 0);
-  const totAct = done.reduce((s, r) => s + r.act, 0);
+  const sel = rows.find((r) => r.iso === (selected || thisISO)) || rows[0];
+  const started = rows.filter((r) => r.status !== "upcoming" && r.fc !== null);
+  const totFc = started.reduce((s, r) => s + (r.fc || 0), 0);
+  const totAct = started.reduce((s, r) => s + (r.act || 0), 0);
   const totPct = totFc ? ((totAct - totFc) / totFc) * 100 : null;
 
-  function pctText(p: number | null) {
-    if (p === null) return "—";
-    return (p >= 0 ? "+" : "") + p.toFixed(1) + "%";
+  function statusChip(st: Row["status"]) {
+    if (st === "current") return <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/15 text-primary font-medium">This week</span>;
+    if (st === "upcoming") return <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-medium">Upcoming</span>;
+    return <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-700 font-medium">Completed</span>;
   }
-  function tone(v: number | null) {
-    if (v === null) return "text-muted-foreground";
-    return v >= 0 ? "text-emerald-700" : "text-red-700";
-  }
+
+  const collectedPct = sel && sel.fc && sel.act !== null ? (sel.act / sel.fc) * 100 : null;
 
   return (
     <div className="p-6 space-y-6 w-full">
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Forecast vs actual</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Each week's forecast is locked at the start of the week, then compared with payments recorded in Cash application.
-          </p>
-        </div>
-        <div className="text-right">
-          <button onClick={onManual} disabled={busy}
-            className="px-3 py-1.5 text-sm rounded bg-primary text-primary-foreground disabled:opacity-50">
-            {busy ? "Saving…" : currentSnap ? "Re-lock this week's forecast" : "Lock this week's forecast"}
-          </button>
-          <div className="text-xs text-muted-foreground mt-1">
-            {currentSnap
-              ? `Locked ${new Date(currentSnap.taken_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })} · ${currentSnap.method || "auto"}`
-              : "Not locked yet this week"}
-          </div>
-          {msg && <div className="text-xs text-muted-foreground mt-1">{msg}</div>}
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Forecast vs actual</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Forecasted cash for each week (Monday–Friday) against payments received that same week. Click a week to see it in the cards.
+        </p>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-card"><CardContent className="p-4">
-          <div className="text-xs text-muted-foreground uppercase tracking-wider">Weeks compared</div>
-          <div className="text-2xl font-bold mt-1">{done.length}</div>
-          <div className="text-xs text-muted-foreground mt-1">completed weeks with a snapshot</div>
-        </CardContent></Card>
-        <Card className="bg-card"><CardContent className="p-4">
-          <div className="text-xs text-muted-foreground uppercase tracking-wider">Forecast</div>
-          <div className="text-2xl font-bold font-mono mt-1">{fmtCur(totFc)}</div>
-        </CardContent></Card>
-        <Card className="bg-card"><CardContent className="p-4">
-          <div className="text-xs text-muted-foreground uppercase tracking-wider">Actual</div>
-          <div className="text-2xl font-bold font-mono mt-1">{fmtCur(totAct)}</div>
-        </CardContent></Card>
-        <Card className="bg-card"><CardContent className="p-4">
-          <div className="text-xs text-muted-foreground uppercase tracking-wider">Variance</div>
-          <div className={"text-2xl font-bold font-mono mt-1 " + tone(totPct)}>{pctText(totPct)}</div>
-          <div className="text-xs text-muted-foreground mt-1">{done.length ? fmtCur(totAct - totFc) : "no completed weeks yet"}</div>
-        </CardContent></Card>
-      </div>
+      {sel && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="bg-card"><CardContent className="p-4">
+            <div className="text-xs text-muted-foreground uppercase tracking-wider">Week</div>
+            <div className="text-2xl font-bold mt-1">{weekLabel(sel.start)}</div>
+            <div className="mt-1">{statusChip(sel.status)}</div>
+          </CardContent></Card>
+          <Card className="bg-card"><CardContent className="p-4">
+            <div className="text-xs text-muted-foreground uppercase tracking-wider">Forecasted cash</div>
+            <div className="text-2xl font-bold font-mono mt-1">{sel.fc === null ? "—" : fmtCur(sel.fc)}</div>
+            <div className="text-xs text-muted-foreground mt-1">
+              {sel.fc === null ? "no forecast saved for this week" : `${sel.fcCount} invoices · ${sel.source === "locked" ? "set at start of week" : "projected"}`}
+            </div>
+          </CardContent></Card>
+          <Card className="bg-card"><CardContent className="p-4">
+            <div className="text-xs text-muted-foreground uppercase tracking-wider">Actual received</div>
+            <div className="text-2xl font-bold font-mono mt-1">{sel.act === null ? "—" : fmtCur(sel.act)}</div>
+            <div className="text-xs text-muted-foreground mt-1">
+              {sel.act === null ? "week hasn't started" : collectedPct === null ? "payments received this week" : `${collectedPct.toFixed(1)}% of forecast collected`}
+            </div>
+          </CardContent></Card>
+          <Card className="bg-card"><CardContent className="p-4">
+            <div className="text-xs text-muted-foreground uppercase tracking-wider">Variance{sel.status === "current" ? " so far" : ""}</div>
+            <div className={"text-2xl font-bold font-mono mt-1 " + tone(sel.varAmt)}>
+              {sel.varAmt === null ? "—" : (sel.varAmt >= 0 ? "+" : "") + fmtCur(sel.varAmt)}
+            </div>
+            <div className={"text-xs mt-1 " + tone(sel.varPct)}>{pctText(sel.varPct)}</div>
+          </CardContent></Card>
+        </div>
+      )}
 
       <Card className="bg-card">
-        <CardHeader className="pb-2"><CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Last {HISTORY_WEEKS} weeks</CardTitle></CardHeader>
+        <CardHeader className="pb-2"><CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Weekly forecast vs actual</CardTitle></CardHeader>
         <CardContent className="p-0">
           <div className="grid grid-cols-12 gap-2 px-4 py-2 text-[10px] uppercase tracking-wider text-muted-foreground bg-muted/40 border-b border-border">
-            <div className="col-span-3">Week</div>
+            <div className="col-span-2">Week</div>
+            <div className="col-span-2">Status</div>
             <div className="col-span-2 text-right">Forecast</div>
             <div className="col-span-2 text-right">Actual</div>
-            <div className="col-span-3 text-right">Variance</div>
+            <div className="col-span-2 text-right">Variance</div>
             <div className="col-span-2 text-right">Variance %</div>
           </div>
-          {rows.map((r) => (
-            <div key={r.iso} className={"grid grid-cols-12 gap-2 px-4 py-2.5 text-sm items-center border-b border-border/50 " + (r.current ? "bg-primary/5" : "")}>
-              <div className="col-span-3">
-                {rangeLabel(r.start)}
-                {r.current && <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-primary/15 text-primary font-medium">in progress</span>}
+          {rows.map((r) => {
+            const isSel = sel && r.iso === sel.iso;
+            return (
+              <div key={r.iso} onClick={() => setSelected(r.iso)}
+                className={"grid grid-cols-12 gap-2 px-4 py-2.5 text-sm items-center border-b border-border/50 cursor-pointer " +
+                  (isSel ? "bg-primary/10 " : "hover:bg-muted/30 ") + (r.status === "upcoming" ? "text-muted-foreground" : "")}>
+                <div className="col-span-2 font-medium">{weekLabel(r.start)}</div>
+                <div className="col-span-2">{statusChip(r.status)}</div>
+                <div className="col-span-2 text-right font-mono">{r.fc === null ? "—" : fmtCur(r.fc)}</div>
+                <div className="col-span-2 text-right font-mono">{r.act === null ? "—" : fmtCur(r.act)}</div>
+                <div className={"col-span-2 text-right font-mono " + tone(r.varAmt)}>
+                  {r.varAmt === null ? "—" : (r.varAmt >= 0 ? "+" : "") + fmtCur(r.varAmt)}
+                </div>
+                <div className={"col-span-2 text-right font-mono " + tone(r.varPct)}>{pctText(r.varPct)}</div>
               </div>
-              <div className="col-span-2 text-right font-mono">
-                {r.fc === null ? <span className="text-xs text-muted-foreground">no snapshot</span> : fmtCur(r.fc)}
-              </div>
-              <div className="col-span-2 text-right font-mono">{fmtCur(r.act)}</div>
-              <div className={"col-span-3 text-right font-mono " + tone(r.varAmt)}>
-                {r.varAmt === null ? "—" : (r.varAmt >= 0 ? "+" : "") + fmtCur(r.varAmt)}
-              </div>
-              <div className={"col-span-2 text-right font-mono " + tone(r.varPct)}>{pctText(r.varPct)}</div>
+            );
+          })}
+          <div className="grid grid-cols-12 gap-2 px-4 py-3 text-sm items-center font-semibold bg-muted/30">
+            <div className="col-span-4">Total to date</div>
+            <div className="col-span-2 text-right font-mono">{fmtCur(totFc)}</div>
+            <div className="col-span-2 text-right font-mono">{fmtCur(totAct)}</div>
+            <div className={"col-span-2 text-right font-mono " + tone(totFc ? totAct - totFc : null)}>
+              {totFc ? (totAct - totFc >= 0 ? "+" : "") + fmtCur(totAct - totFc) : "—"}
             </div>
-          ))}
+            <div className={"col-span-2 text-right font-mono " + tone(totPct)}>{pctText(totPct)}</div>
+          </div>
         </CardContent>
       </Card>
     </div>
