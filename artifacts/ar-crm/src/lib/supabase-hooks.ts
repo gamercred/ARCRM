@@ -31,6 +31,25 @@ async function fetchAllAnalysts() {
   return data ?? [];
 }
 
+type DelayStat = { avg: number; count: number };
+async function fetchPaymentDelays(): Promise<Map<string, DelayStat>> {
+  const map = new Map<string, DelayStat>();
+  try {
+    const { data, error } = await supabase.from("payments").select("customer_id, days_from_due");
+    if (error || !data) return map;
+    const acc = new Map<string, { sum: number; count: number }>();
+    for (const p of data as any[]) {
+      if (p.customer_id == null || p.days_from_due === null || p.days_from_due === undefined) continue;
+      const k = String(p.customer_id);
+      const a = acc.get(k) || { sum: 0, count: 0 };
+      a.sum += Number(p.days_from_due); a.count += 1;
+      acc.set(k, a);
+    }
+    acc.forEach((a, k) => map.set(k, { avg: Math.round(a.sum / a.count), count: a.count }));
+  } catch { /* fall back to default if payments can't be read */ }
+  return map;
+}
+
 function computeStage(dpd: number): string {
   if (dpd >= 150) return "Write Off";
   if (dpd >= 149) return "Termination";
@@ -46,8 +65,10 @@ function computeStage(dpd: number): string {
   return "";
 }
 
-function formatInvoice(row: any, analystMap: Map<number, string>, today: Date) {
+function formatInvoice(row: any, analystMap: Map<number, string>, today: Date, delayMap?: Map<string, DelayStat>) {
   const { status, overdueDays } = computeStatus(row.due_date, today);
+  const hist = row.customer_id != null ? delayMap?.get(String(row.customer_id)) : undefined;
+  const offsetDays = hist ? hist.avg : 7;
   return {
     id: row.id,
     invoiceNumber: row.invoice_number,
@@ -59,8 +80,11 @@ function formatInvoice(row: any, analystMap: Map<number, string>, today: Date) {
     currency: row.currency,
     issueDate: row.issue_date,
     dueDate: row.due_date,
-    expectedPaymentDate: row.expected_payment_date ?? (() => { const d = new Date(row.due_date); d.setDate(d.getDate() + 7); return d.toISOString().slice(0, 10); })(),
+    expectedPaymentDate: row.expected_payment_date ?? (() => { const d = new Date(row.due_date); d.setUTCDate(d.getUTCDate() + offsetDays); return d.toISOString().slice(0, 10); })(),
     expectedIsOverride: row.expected_payment_date != null,
+    expectedSource: (row.expected_payment_date != null ? "manual" : hist ? "history" : "default") as "manual" | "history" | "default",
+    expectedHistoryCount: hist?.count ?? 0,
+    expectedHistoryAvg: hist ? hist.avg : null,
     status,
     overdueDays,
     invoiceStage: row.invoice_stage ?? computeStage(Math.floor((today.getTime() - new Date(row.due_date).getTime()) / 86400000)),
@@ -183,10 +207,10 @@ export function useAllInvoices() {
   return useQuery({
     queryKey: ["all-invoices"],
     queryFn: async () => {
-      const [invoices, analysts] = await Promise.all([fetchAllInvoices(), fetchAllAnalysts()]);
+      const [invoices, analysts, delayMap] = await Promise.all([fetchAllInvoices(), fetchAllAnalysts(), fetchPaymentDelays()]);
       const analystMap = new Map<number, string>(analysts.map((a: any) => [a.id, a.name]));
       const today = new Date();
-      return invoices.map((inv: any) => formatInvoice(inv, analystMap, today));
+      return invoices.map((inv: any) => formatInvoice(inv, analystMap, today, delayMap));
     },
   });
 }
@@ -198,10 +222,10 @@ export function useListInvoices(params: {
   return useQuery({
     queryKey: ["invoices", params],
     queryFn: async () => {
-      const [invoices, analysts] = await Promise.all([fetchAllInvoices(), fetchAllAnalysts()]);
+      const [invoices, analysts, delayMap] = await Promise.all([fetchAllInvoices(), fetchAllAnalysts(), fetchPaymentDelays()]);
       const analystMap = new Map<number, string>(analysts.map((a: any) => [a.id, a.name]));
       const today = new Date();
-      let formatted = invoices.map((inv: any) => formatInvoice(inv, analystMap, today));
+      let formatted = invoices.map((inv: any) => formatInvoice(inv, analystMap, today, delayMap));
       if (params.status && params.status !== "all") formatted = formatted.filter((i) => i.status === params.status);
       if (params.analystId != null) formatted = formatted.filter((i) => i.analystId === params.analystId);
       if (params.customerId) formatted = formatted.filter((i) => String(i.customerId) === String(params.customerId));
