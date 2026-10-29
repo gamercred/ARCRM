@@ -102,13 +102,13 @@
   --chart-4: 0 84% 60%;
   --chart-5: 280 65% 60%;
 
-  --sidebar: 0 0% 100%;
-  --sidebar-foreground: 240 6% 10%;
-  --sidebar-border: 240 6% 91%;
+  --sidebar: 240 10% 4%;
+  --sidebar-foreground: 0 0% 100%;
+  --sidebar-border: 240 5% 16%;
   --sidebar-primary: 227 68% 55%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 240 5% 94%;
-  --sidebar-accent-foreground: 240 6% 10%;
+  --sidebar-accent: 240 5% 17%;
+  --sidebar-accent-foreground: 0 0% 100%;
   --sidebar-ring: 227 68% 55%;
 
   --app-font-sans: 'Inter', sans-serif;
