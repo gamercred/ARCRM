@@ -45,7 +45,7 @@ function tone(v: number | null): string {
 type Row = {
   iso: string; start: Date; status: "done" | "current" | "upcoming";
   fc: number | null; fcCount: number; source: "locked" | "projected" | "none";
-  act: number | null; varAmt: number | null; varPct: number | null;
+  act: number | null; varAmt: number | null; varPct: number | null; early: number;
 };
 
 export default function ForecastVsActual() {
@@ -127,10 +127,20 @@ export default function ForecastVsActual() {
   const rows: Row[] = useMemo(() => {
     const snapMap = new Map<string, any>(snapList.map((s: any) => [s.week_start, s]));
     const actualMap = new Map<string, number>();
+    const earlyMap = new Map<string, number>();
+    const byId = new Map<string, any>();
+    const byNum = new Map<string, any>();
+    invList.forEach((i: any) => { byId.set(String(i.id), i); byNum.set(String(i.invoiceNumber), i); });
     payList.forEach((p: any) => {
       if (!p.payment_date) return;
-      const ws = toISO(weekStart(fromISO(p.payment_date)));
+      const paidStart = weekStart(fromISO(p.payment_date));
+      const ws = toISO(paidStart);
       actualMap.set(ws, (actualMap.get(ws) || 0) + Number(p.amount || 0));
+      const inv = byId.get(String(p.invoice_id)) || byNum.get(String(p.invoice_number));
+      const exp = inv?.expectedPaymentDate;
+      if (exp && weekStart(fromISO(exp)).getTime() > paidStart.getTime()) {
+        earlyMap.set(ws, (earlyMap.get(ws) || 0) + Number(p.amount || 0));
+      }
     });
 
     // start from the earliest saved week (tracking start), or this week
@@ -157,7 +167,7 @@ export default function ForecastVsActual() {
       const act = status === "upcoming" ? null : actualMap.get(iso) || 0;
       const varAmt = fc !== null && act !== null ? act - fc : null;
       const varPct = fc && act !== null ? ((act - fc) / fc) * 100 : null;
-      out.push({ iso, start, status, fc, fcCount, source, act, varAmt, varPct });
+      out.push({ iso, start, status, fc, fcCount, source, act, varAmt, varPct, early: status === "upcoming" ? 0 : earlyMap.get(iso) || 0 });
     }
     return out;
   }, [snaps, payments, invoices]);
@@ -205,6 +215,7 @@ export default function ForecastVsActual() {
             <div className="text-xs text-muted-foreground mt-1">
               {sel.act === null ? "week hasn't started" : collectedPct === null ? "payments received this week" : `${collectedPct.toFixed(1)}% of forecast collected`}
             </div>
+            {sel.early > 0 && <div className="text-xs text-violet-700 mt-1">incl. {fmtCur(sel.early)} paid early (expected in later weeks)</div>}
           </CardContent></Card>
           <Card className="bg-card"><CardContent className="p-4">
             <div className="text-xs text-muted-foreground uppercase tracking-wider">Variance{sel.status === "current" ? " so far" : ""}</div>
@@ -236,7 +247,7 @@ export default function ForecastVsActual() {
                 <div className="col-span-2 font-medium">{weekLabel(r.start)}</div>
                 <div className="col-span-2">{statusChip(r.status)}</div>
                 <div className="col-span-2 text-right font-mono">{r.fc === null ? "—" : fmtCur(r.fc)}</div>
-                <div className="col-span-2 text-right font-mono">{r.act === null ? "—" : fmtCur(r.act)}</div>
+                <div className="col-span-2 text-right font-mono">{r.act === null ? "—" : fmtCur(r.act)}{r.early > 0 && <div className="text-[10px] text-violet-700 font-sans">incl. {fmtCur(r.early)} early</div>}</div>
                 <div className={"col-span-2 text-right font-mono " + tone(r.varAmt)}>
                   {r.varAmt === null ? "—" : (r.varAmt >= 0 ? "+" : "") + fmtCur(r.varAmt)}
                 </div>

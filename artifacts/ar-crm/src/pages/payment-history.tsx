@@ -5,6 +5,7 @@ import {
   CalendarDays, Building2, Search, ChevronRight, Copy, X, ArrowDownLeft, History, Clock, CheckCircle2, Plus,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { useAllInvoices } from "@/lib/supabase-hooks";
 import { formatCurrency, formatDate } from "@/lib/format";
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -27,6 +28,12 @@ function weekLabel(start: Date): string {
   return start.getMonth() === e.getMonth()
     ? `${start.getDate()} – ${e.getDate()} ${MONTHS[e.getMonth()]} ${e.getFullYear()}`
     : `${start.getDate()} ${MONTHS[start.getMonth()]} – ${e.getDate()} ${MONTHS[e.getMonth()]} ${e.getFullYear()}`;
+}
+function shortWeek(start: Date): string {
+  const e = addDays(start, 4);
+  return start.getMonth() === e.getMonth()
+    ? `${start.getDate()} – ${e.getDate()} ${MONTHS[e.getMonth()]}`
+    : `${start.getDate()} ${MONTHS[start.getMonth()]} – ${e.getDate()} ${MONTHS[e.getMonth()]}`;
 }
 function money(n: number): string {
   return formatCurrency(n, "USD");
@@ -97,6 +104,25 @@ export default function PaymentHistory() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
+
+  const { data: invoices } = useAllInvoices();
+  const invIndex = useMemo(() => {
+    const byId = new Map<string, any>();
+    const byNum = new Map<string, any>();
+    (Array.isArray(invoices) ? invoices : []).forEach((i: any) => { byId.set(String(i.id), i); byNum.set(String(i.invoiceNumber), i); });
+    return { byId, byNum };
+  }, [invoices]);
+  function expectedStartOf(p: any): Date | null {
+    const inv = invIndex.byId.get(String(p?.invoice_id)) || invIndex.byNum.get(String(p?.invoice_number));
+    const exp = inv?.expectedPaymentDate;
+    return exp ? weekStart(fromISO(exp)) : null;
+  }
+  function earlyInfo(p: any): { expectedStart: Date } | null {
+    if (!p?.payment_date) return null;
+    const es = expectedStartOf(p);
+    if (!es) return null;
+    return es.getTime() > weekStart(fromISO(p.payment_date)).getTime() ? { expectedStart: es } : null;
+  }
 
   function showToast(msg: string) {
     setToast(msg);
@@ -311,7 +337,7 @@ export default function PaymentHistory() {
                     <div className="col-span-5 flex items-center gap-2.5">
                       <ChevronRight className={"w-4 h-4 text-muted-foreground transition-transform " + (open ? "rotate-90" : "")} />
                       <span className="font-semibold text-sm">{weekLabel(w.start)}</span>
-                      {w.iso === thisISO && <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary/10 text-primary border border-primary/20">This week</span>}
+                      {w.iso === thisISO && <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary/10 text-primary border border-primary/20">This week</span>}{w.payments.filter((p: any) => earlyInfo(p)).length > 0 && <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-violet-50 text-violet-700 border border-violet-200">{w.payments.filter((p: any) => earlyInfo(p)).length} paid early</span>}
                     </div>
                     <div className="col-span-2 text-right font-mono">{w.payments.length}</div>
                     <div className="col-span-2 text-right font-mono">{w.customers.size}</div>
@@ -335,7 +361,7 @@ export default function PaymentHistory() {
                             <div key={p.id} className="grid grid-cols-12 px-6 py-2.5 items-center border-b border-border/40 last:border-0 hover:bg-primary/5">
                               <div className="col-span-2 font-mono text-muted-foreground">{formatDate(p.payment_date)}</div>
                               <div className="col-span-2">
-                                <button onClick={() => setDrawer(p)} className="font-mono text-primary font-medium hover:underline">{p.invoice_number}</button>
+                                <button onClick={() => setDrawer(p)} className="font-mono text-primary font-medium hover:underline">{p.invoice_number}</button>{earlyInfo(p) && <div className="mt-0.5"><span className="inline-flex px-1.5 py-0.5 rounded border text-[10px] font-medium bg-violet-50 text-violet-700 border-violet-200">Paid early · exp. {shortWeek(earlyInfo(p)!.expectedStart)}</span></div>}
                               </div>
                               <div className="col-span-3 truncate">
                                 {p.customer_id
@@ -455,7 +481,7 @@ export default function PaymentHistory() {
                       {drawer.reference && <Copy onClick={() => copyRef(drawer.reference)} className="w-3 h-3 cursor-pointer opacity-50 hover:opacity-100" />}
                     </dd>
                   </div>
-                  <div className="flex justify-between p-2.5 bg-muted/20"><dt className="text-muted-foreground">Vs due date</dt><dd className={"font-mono " + dsoTone(drawer.days_from_due)}>{dsoText(drawer.days_from_due)}</dd></div>
+                  <div className="flex justify-between p-2.5 bg-muted/20"><dt className="text-muted-foreground">Vs due date</dt><dd className={"font-mono " + dsoTone(drawer.days_from_due)}>{dsoText(drawer.days_from_due)}</dd></div><div className="flex justify-between p-2.5"><dt className="text-muted-foreground">Forecast week</dt><dd className="font-mono flex items-center gap-1.5">{expectedStartOf(drawer) ? shortWeek(expectedStartOf(drawer)!) : "—"}{earlyInfo(drawer) && <span className="px-1.5 py-0.5 rounded border text-[10px] font-sans font-medium bg-violet-50 text-violet-700 border-violet-200">Paid early</span>}</dd></div>
                 </dl>
               </div>
 
